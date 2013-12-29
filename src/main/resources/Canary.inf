@@ -1,4 +1,6 @@
+name = ${name}
 main-class = com.greatmancode.craftconomy3.tools.interfaces.CanaryLoader
 isLibrary = false
 author = Greatman
-version = ${build.number}
+version = ${version} ${BUILD_TAG}
+dependencies=CanaryUtil
