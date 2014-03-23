@@ -16,27 +16,28 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Craftconomy3.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.greatmancode.craftconomy3;
+package com.greatmancode.craftconomy3.account;
 
-/**
- * Display formats
- */
-public enum DisplayFormat {
+import com.greatmancode.craftconomy3.TestInitializator;
+import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
-    /**
-     * 2 dollars 1 cent
-     */
-    LONG,
-    /**
-     * $2.1
-     */
-    SIGN,
-    /**
-     * 2.01 dollars
-     */
-    SMALL,
-    /**
-     * 2 dollars
-     */
-    MAJORONLY
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class TestBankAccount extends TestCase{
+
+
+    @Before
+    public void setUp() {
+        new TestInitializator();
+    }
+
+    @Test
+    public void testBankAccount() {
+        Account account = new Account(Account.BANK_PREFIX + "testbank");
+        assertTrue(account.isBankAccount());
+        assertFalse(account.ignoreACL());
+    }
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,52 +21,18 @@ package com.greatmancode.craftconomy3.database.tables;
 import com.alta189.simplesave.Field;
 import com.alta189.simplesave.Id;
 import com.alta189.simplesave.Table;
-import com.greatmancode.craftconomy3.account.Account;
+import lombok.Data;
 
 @Table("account")
+@Data
+@SuppressWarnings("PMD.UnusedPrivateField")
 public class AccountTable {
-	@Id
-	private int id;
-	@Field
-	private String name;
-	@Field
-	private boolean infiniteMoney;
+    @Id
+    private int id;
+    @Field
+    private String name;
+    @Field
+    private boolean infiniteMoney;
     @Field
     private boolean ignoreACL;
-
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public boolean hasInfiniteMoney() {
-		return infiniteMoney;
-	}
-
-	public void setInfiniteMoney(boolean infiniteMoney) {
-		this.infiniteMoney = infiniteMoney;
-	}
-
-	@Override
-	public String toString() {
-		return getName().replace(Account.BANK_PREFIX, "");
-	}
-    public boolean isIgnoreACL() {
-        return ignoreACL;
-    }
-
-    public void setIgnoreACL(boolean ignoreACL) {
-        this.ignoreACL = ignoreACL;
-    }
 }

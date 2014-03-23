@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,27 +21,14 @@ package com.greatmancode.craftconomy3.database.tables.craftconomy2;
 import com.alta189.simplesave.Field;
 import com.alta189.simplesave.Id;
 import com.alta189.simplesave.Table;
+import lombok.Data;
 
 @Table("Account")
+@Data
+@SuppressWarnings("PMD.UnusedPrivateField")
 public class AccountTable {
-	@Id
-	private int id;
-	@Field
-	private String username;
-
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    @Id
+    private int id;
+    @Field
+    private String username;
 }

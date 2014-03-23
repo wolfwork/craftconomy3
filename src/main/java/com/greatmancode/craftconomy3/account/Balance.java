@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,41 +22,42 @@ import com.greatmancode.craftconomy3.currency.Currency;
 
 /**
  * Represents a balance entry for easy formatting.
+ *
  * @author greatman
  */
 public class Balance {
-	private String world;
-	private Currency currency;
-	private double balance;
+    private String world;
+    private Currency currency;
+    private double balance;
 
-	public Balance(String world, Currency currency, double balance) {
-		this.world = world;
-		this.currency = currency;
-		this.balance = balance;
-	}
+    public Balance(String world, Currency currency, double balance) {
+        this.world = world;
+        this.currency = currency;
+        this.balance = balance;
+    }
 
-	public String getWorld() {
-		return world;
-	}
+    public String getWorld() {
+        return world;
+    }
 
-	public void setWorld(String world) {
-		this.world = world;
-	}
+    public void setWorld(String world) {
+        this.world = world;
+    }
 
-	public Currency getCurrency() {
-		return currency;
-	}
+    public Currency getCurrency() {
+        return currency;
+    }
 
-	public void setCurrency(Currency currency) {
-		this.currency = currency;
-	}
+    public void setCurrency(Currency currency) {
+        this.currency = currency;
+    }
 
-	public double getBalance() {
-		return balance;
-	}
+    public double getBalance() {
+        return balance;
+    }
 
-	public void setBalance(double balance) {
-		//TODO: Don't allow negatives.
-		this.balance = balance;
-	}
+    public void setBalance(double balance) {
+        //TODO: Don't allow negatives.
+        this.balance = balance;
+    }
 }

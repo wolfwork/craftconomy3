@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,32 +18,35 @@
  */
 package com.greatmancode.craftconomy3.database.tables;
 
-import java.sql.Timestamp;
-
 import com.alta189.simplesave.Field;
 import com.alta189.simplesave.Id;
 import com.alta189.simplesave.Table;
 import com.greatmancode.craftconomy3.Cause;
 import com.greatmancode.craftconomy3.LogInfo;
+import lombok.Data;
+
+import java.sql.Timestamp;
 
 @Table("log")
+@Data
+@SuppressWarnings("PMD.UnusedPrivateField")
 public class LogTable {
-	@Id
-	public int id;
-	@Field
-	public int username_id;
-	@Field
-	public double amount;
-	@Field
-	public LogInfo type;
-	@Field
-	public Cause cause;
-	@Field
-	public Timestamp timestamp;
-	@Field
-	public String causeReason;
-	@Field
-	public String currencyName;
-	@Field
-	public String worldName;
+    @Id
+    private int id;
+    @Field
+    private int username_id;
+    @Field
+    private double amount;
+    @Field
+    private LogInfo type;
+    @Field
+    private Cause cause;
+    @Field
+    private Timestamp timestamp;
+    @Field
+    private String causeReason;
+    @Field
+    private String currencyName;
+    @Field
+    private String worldName;
 }

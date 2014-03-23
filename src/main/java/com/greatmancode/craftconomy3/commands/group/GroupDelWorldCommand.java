@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,38 +22,38 @@ import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.tools.commands.interfaces.CommandExecutor;
 
 public class GroupDelWorldCommand extends CommandExecutor {
-	@Override
-	public void execute(String sender, String[] args) {
-		if (!Common.getInstance().getWorldGroupManager().getWorldGroupName(args[0]).equals("default")) {
-			Common.getInstance().getWorldGroupManager().removeWorldFromGroup(args[0]);
-			Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().getString("world_removed_from_group"));
-		} else {
-			Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().getString("world_not_in_group"));
-		}
-	}
+    @Override
+    public void execute(String sender, String[] args) {
+        if (!Common.getInstance().getWorldGroupManager().getWorldGroupName(args[0]).equals("default")) {
+            Common.getInstance().getWorldGroupManager().removeWorldFromGroup(args[0]);
+            Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().getString("world_removed_from_group"));
+        } else {
+            Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().getString("world_not_in_group"));
+        }
+    }
 
-	@Override
-	public String help() {
-		return Common.getInstance().getLanguageManager().getString("group_delworld_cmd_help");
-	}
+    @Override
+    public String help() {
+        return Common.getInstance().getLanguageManager().getString("group_delworld_cmd_help");
+    }
 
-	@Override
-	public int maxArgs() {
-		return 1;
-	}
+    @Override
+    public int maxArgs() {
+        return 1;
+    }
 
-	@Override
-	public int minArgs() {
-		return 1;
-	}
+    @Override
+    public int minArgs() {
+        return 1;
+    }
 
-	@Override
-	public boolean playerOnly() {
-		return false;
-	}
+    @Override
+    public boolean playerOnly() {
+        return false;
+    }
 
-	@Override
-	public String getPermissionNode() {
-		return "craftconomy.group.delworld";
-	}
+    @Override
+    public String getPermissionNode() {
+        return "craftconomy.group.delworld";
+    }
 }

@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -25,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 public class TestDatabaseManager {
 	@Before
@@ -36,5 +35,6 @@ public class TestDatabaseManager {
 	@Test
 	public void testDatabaseManager() {
 		assertNotNull(Common.getInstance().getDatabaseManager());
+        assertNotNull(Common.getInstance().getDatabaseManager().getDatabase());
 	}
 }

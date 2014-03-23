@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,41 +18,41 @@
  */
 package com.greatmancode.craftconomy3.commands.currency;
 
-import java.util.Arrays;
-
 import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.tools.commands.interfaces.CommandExecutor;
 
-public class CurrencyListCommand extends CommandExecutor{
+import java.util.Arrays;
 
-	@Override
-	public void execute(String sender, String[] args) {
-		Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().parse("currency_list_title"));
-		Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Arrays.toString(Common.getInstance().getCurrencyManager().getCurrencyNames().toArray()));
-	}
+public class CurrencyListCommand extends CommandExecutor {
 
-	@Override
-	public String help() {
-		return Common.getInstance().getLanguageManager().getString("currency_list_cmd_help");
-	}
+    @Override
+    public void execute(String sender, String[] args) {
+        Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().parse("currency_list_title"));
+        Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Arrays.toString(Common.getInstance().getCurrencyManager().getCurrencyNames().toArray()));
+    }
 
-	@Override
-	public int maxArgs() {
-		return 0;
-	}
+    @Override
+    public String help() {
+        return Common.getInstance().getLanguageManager().getString("currency_list_cmd_help");
+    }
 
-	@Override
-	public int minArgs() {
-		return 0;
-	}
+    @Override
+    public int maxArgs() {
+        return 0;
+    }
 
-	@Override
-	public boolean playerOnly() {
-		return false;
-	}
+    @Override
+    public int minArgs() {
+        return 0;
+    }
 
-	@Override
-	public String getPermissionNode() {
-		return "craftconomy.currency.list";
-	}
+    @Override
+    public boolean playerOnly() {
+        return false;
+    }
+
+    @Override
+    public String getPermissionNode() {
+        return "craftconomy.currency.list";
+    }
 }

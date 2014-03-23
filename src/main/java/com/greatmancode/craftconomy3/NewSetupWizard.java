@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,24 +22,25 @@ package com.greatmancode.craftconomy3;
  * Different setup steps for the wizard
  */
 public enum NewSetupWizard {
-	DATABASE_STEP,
-	BASIC_STEP,
-	CURRENCY_STEP,
-	CONVERT_STEP;
-	private static NewSetupWizard state = BASIC_STEP;
+    DATABASE_STEP,
+    BASIC_STEP,
+    CURRENCY_STEP,
+    CONVERT_STEP;
+    private static NewSetupWizard state = BASIC_STEP;
 
-	/**
-	 * Set the wizard state.
-	 * @param newState The new state to set to.
-	 */
-	public static void setState(NewSetupWizard newState) {
-		state = newState;
-	}
+    /**
+     * Set the wizard state.
+     *
+     * @param newState The new state to set to.
+     */
+    public static void setState(NewSetupWizard newState) {
+        state = newState;
+    }
 
-	/**
-	 * Retrieve the Wizard state.
-	 */
-	public static NewSetupWizard getState() {
-		return state;
-	}
+    /**
+     * Retrieve the Wizard state.
+     */
+    public static NewSetupWizard getState() {
+        return state;
+    }
 }

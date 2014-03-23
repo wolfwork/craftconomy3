@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,17 +21,18 @@ package com.greatmancode.craftconomy3.account;
 import com.greatmancode.craftconomy3.database.tables.AccessTable;
 
 public class AccountACLValue {
-	private final AccessTable table;
+    private final AccessTable table;
 
-	public AccountACLValue(AccessTable entry) {
-		this.table = entry;
-	}
+    public AccountACLValue(AccessTable entry) {
+        this.table = entry;
+    }
 
-	/**
-	 * Represents a database entry of the ACL entry.
-	 * @return a AccessTable instance
-	 */
-	public AccessTable getTable() {
-		return table;
-	}
+    /**
+     * Represents a database entry of the ACL entry.
+     *
+     * @return a AccessTable instance
+     */
+    public AccessTable getTable() {
+        return table;
+    }
 }

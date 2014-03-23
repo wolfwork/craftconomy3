@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,57 +21,20 @@ package com.greatmancode.craftconomy3.database.tables.craftconomy2;
 import com.alta189.simplesave.Field;
 import com.alta189.simplesave.Id;
 import com.alta189.simplesave.Table;
+import lombok.Data;
 
 @Table("Balance")
+@Data
+@SuppressWarnings("PMD.UnusedPrivateField")
 public class BalanceTable {
-	@Id
-	private int id;
-	@Field
-	private double balance;
-	@Field
-	private int currency_id;
-	@Field
-	private String worldName;
-	@Field
-	private int username_id;
-
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public double getBalance() {
-		return balance;
-	}
-
-	public void setBalance(double balance) {
-		this.balance = balance;
-	}
-
-	public int getCurrencyId() {
-		return currency_id;
-	}
-
-	public void setCurrencyId(int currencyId) {
-		this.currency_id = currencyId;
-	}
-
-	public String getWorldName() {
-		return worldName;
-	}
-
-	public void setWorldName(String worldName) {
-		this.worldName = worldName;
-	}
-
-	public int getUsernameId() {
-		return username_id;
-	}
-
-	public void setUsernameId(int usernameId) {
-		this.username_id = usernameId;
-	}
+    @Id
+    private int id;
+    @Field
+    private double balance;
+    @Field
+    private int currency_id;
+    @Field
+    private String worldName;
+    @Field
+    private int username_id;
 }

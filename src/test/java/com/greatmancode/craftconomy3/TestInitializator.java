@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,8 @@
  */
 package com.greatmancode.craftconomy3;
 
+import java.io.File;
+import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
 import com.alta189.simplesave.exceptions.ConnectionException;
@@ -28,40 +30,56 @@ import com.greatmancode.tools.database.throwable.InvalidDatabaseConstructor;
 import com.greatmancode.tools.interfaces.UnitTestLoader;
 
 public class TestInitializator {
-	private static boolean initialized = false;
 	public TestInitializator() {
-		if (!initialized) {
-			new Common().onEnable(new UnitTestServerCaller(new UnitTestLoader()), Logger.getLogger("unittest"));
-			Common.getInstance().getMainConfig().setValue("System.Setup", false);
-			try {
-				Common.getInstance().initialiseDatabase();
-			} catch (TableRegistrationException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ConnectionException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InvalidDatabaseConstructor invalidDatabaseConstructor) {
-				invalidDatabaseConstructor.printStackTrace();
-			}
-			Common.getInstance().initializeCurrency();
-			ConfigTable table = new ConfigTable();
-			table.setName("holdings");
-			table.setValue("100");
-			Common.getInstance().getDatabaseManager().getDatabase().save(table);
-			table = new ConfigTable();
-			table.setName("bankprice");
-			table.setValue("200");
-			Common.getInstance().getDatabaseManager().getDatabase().save(table);
-			table = new ConfigTable();
-			table.setName("longmode");
-			table.setValue("long");
-			Common.getInstance().getDatabaseManager().getDatabase().save(table);
-			Common.getInstance().getCurrencyManager().addCurrency("Dollar", "Dollars", "Coin", "Coins", 0 , "$", true);
-			Common.getInstance().getCurrencyManager().setDefault(1);
-			Common.getInstance().loadDefaultSettings();
-			Common.getInstance().startUp();
-			initialized = true;
-		}
+        File file = new UnitTestServerCaller(new UnitTestLoader()).getDataFolder();
+        for (File entry : file.listFiles()) {
+            entry.delete();
+        }
+        file.delete();
+        try {
+            setStaticValue("com.greatmancode.craftconomy3.Common", "initialized", false);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        new Common().onEnable(new UnitTestServerCaller(new UnitTestLoader()), Logger.getLogger("unittest"));
+        Common.getInstance().getMainConfig().setValue("System.QuickSetup.Enable", true);
+        Common.getInstance().getMainConfig().setValue("System.Logging.Enabled", true);
+        try {
+            setStaticValue("com.greatmancode.craftconomy3.Common", "initialized", false);
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        new Common().onEnable(new UnitTestServerCaller(new UnitTestLoader()), Logger.getLogger("unittest"));
 	}
+
+    /**
+     * Use reflection to change value of any static field.
+     * @param className The complete name of the class (ex. java.lang.String)
+     * @param fieldName The name of a static field in the class
+     * @param newValue The value you want the field to be set to.
+     * @throws SecurityException .
+     * @throws NoSuchFieldException .
+     * @throws ClassNotFoundException .
+     * @throws IllegalArgumentException .
+     * @throws IllegalAccessException .
+     */
+    public static void setStaticValue(final String className, final String fieldName, final Object newValue) throws SecurityException, NoSuchFieldException,
+            ClassNotFoundException, IllegalArgumentException, IllegalAccessException {
+        // Get the private String field
+        final Field field = Class.forName(className).getDeclaredField(fieldName);
+        // Allow modification on the field
+        field.setAccessible(true);
+        // Get
+        final Object oldValue = field.get(Class.forName(className));
+        // Sets the field to the new value
+        field.set(oldValue, newValue);
+    }
 }

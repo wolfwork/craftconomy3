@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,8 +22,9 @@ import java.io.Serializable;
 
 /**
  * The different transactions/actions that can be logged.
+ *
  * @author greatman
  */
 public enum LogInfo implements Serializable {
-	DEPOSIT, WITHDRAW, SET, ADMIN_CMD
+    DEPOSIT, WITHDRAW, SET, ADMIN_CMD
 }

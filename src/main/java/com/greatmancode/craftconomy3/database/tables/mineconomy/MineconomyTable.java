@@ -16,27 +16,31 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with Craftconomy3.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.greatmancode.craftconomy3;
+package com.greatmancode.craftconomy3.database.tables.mineconomy;
 
-/**
- * Display formats
- */
-public enum DisplayFormat {
+import com.alta189.simplesave.Field;
+import com.alta189.simplesave.Id;
+import com.alta189.simplesave.Table;
+import lombok.Data;
 
-    /**
-     * 2 dollars 1 cent
-     */
-    LONG,
-    /**
-     * $2.1
-     */
-    SIGN,
-    /**
-     * 2.01 dollars
-     */
-    SMALL,
-    /**
-     * 2 dollars
-     */
-    MAJORONLY
+@Table(value = "mineconomy_accounts")
+@Data
+@SuppressWarnings("PMD.UnusedPrivateField")
+public class MineconomyTable {
+
+    @Id
+    private int id;
+
+    @Field
+    private String account;
+
+    @Field
+    private double balance;
+
+    @Field
+    private String currency;
+
+    @Field
+    private String status;
+
 }

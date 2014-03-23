@@ -1,7 +1,7 @@
 /*
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2013, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -21,104 +21,35 @@ package com.greatmancode.craftconomy3.database.tables;
 import com.alta189.simplesave.Field;
 import com.alta189.simplesave.Id;
 import com.alta189.simplesave.Table;
+import lombok.Data;
 
 @Table("payday")
+@Data
+@SuppressWarnings("PMD.UnusedPrivateField")
 public class PayDayTable {
-	@Id
-	private int id;
-	@Field
-	private String name;
-	@Field
-	private boolean disabled;
-	/**
-	 * In seconds
-	 */
-	@Field
-	private int time;
-	@Field
-	private String account;
-	/**
-	 * 0 = wage
-	 * 1 = tax
-	 */
-	@Field
-	private int status;
-	@Field
-	private int currency_id;
-	@Field
-	private double value;
-	@Field
-	private String worldName;
-
-	public int getId() {
-		return id;
-	}
-
-	public void setId(int id) {
-		this.id = id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	public boolean isDisabled() {
-		return disabled;
-	}
-
-	public void setDisabled(boolean disabled) {
-		this.disabled = disabled;
-	}
-
-	public int getTime() {
-		return time;
-	}
-
-	public void setTime(int time) {
-		this.time = time;
-	}
-
-	public String getAccount() {
-		return account;
-	}
-
-	public void setAccount(String account) {
-		this.account = account;
-	}
-
-	public int getStatus() {
-		return status;
-	}
-
-	public void setStatus(int status) {
-		this.status = status;
-	}
-
-	public int getCurrencyId() {
-		return currency_id;
-	}
-
-	public void setCurrencyId(int currencyId) {
-		this.currency_id = currencyId;
-	}
-
-	public double getValue() {
-		return value;
-	}
-
-	public void setValue(double value) {
-		this.value = value;
-	}
-
-	public String getWorldName() {
-		return worldName;
-	}
-
-	public void setWorldName(String worldName) {
-		this.worldName = worldName;
-	}
+    @Id
+    private int id;
+    @Field
+    private String name;
+    @Field
+    private boolean disabled;
+    /**
+     * In seconds
+     */
+    @Field
+    private int time;
+    @Field
+    private String account;
+    /**
+     * 0 = wage
+     * 1 = tax
+     */
+    @Field
+    private int status;
+    @Field
+    private int currency_id;
+    @Field
+    private double value;
+    @Field
+    private String worldName;
 }
