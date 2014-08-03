@@ -23,10 +23,7 @@ import com.alta189.simplesave.exceptions.TableRegistrationException;
 import com.greatmancode.craftconomy3.account.Account;
 import com.greatmancode.craftconomy3.account.AccountManager;
 import com.greatmancode.craftconomy3.commands.bank.*;
-import com.greatmancode.craftconomy3.commands.config.ConfigBankPriceCommand;
-import com.greatmancode.craftconomy3.commands.config.ConfigClearLogCommand;
-import com.greatmancode.craftconomy3.commands.config.ConfigFormatCommand;
-import com.greatmancode.craftconomy3.commands.config.ConfigHoldingsCommand;
+import com.greatmancode.craftconomy3.commands.config.*;
 import com.greatmancode.craftconomy3.commands.currency.*;
 import com.greatmancode.craftconomy3.commands.group.GroupAddWorldCommand;
 import com.greatmancode.craftconomy3.commands.group.GroupCreateCommand;
@@ -206,9 +203,6 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
                 this.getLogger().severe(String.format(getLanguageManager().getString("unable_close_db_link"), e.getMessage()));
             }
         }
-        //Null everything
-        log = null;
-        instance = null;
         // Managers
         accountManager = null;
         config = null;
@@ -219,7 +213,6 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         languageManager = null;
         worldGroupManager = null;
         commandManager = null;
-        serverCaller = null;
         databaseInitialized = false;
         currencyInitialized = false;
         initialized = false;
@@ -451,8 +444,9 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     /**
      * Initialize the database Manager
      *
-     * @throws TableRegistrationException
-     * @throws ConnectionException
+     * @throws TableRegistrationException If there's a issue with the tables being registered
+     * @throws ConnectionException If there's a issue conencting to MySQL
+     * @throws InvalidDatabaseConstructor If the database type requested is invalid.
      */
     public void initialiseDatabase() throws TableRegistrationException, ConnectionException, InvalidDatabaseConstructor {
         if (!databaseInitialized) {
@@ -636,11 +630,13 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     /**
      * Write a transaction to the Log.
      *
-     * @param info      The type of transaction to log.
-     * @param cause     The cause of the transaction.
-     * @param amount    The amount of money in this transaction.
-     * @param currency  The currency associated with this transaction
-     * @param worldName The world name associated with this transaction
+     * @param info          The type of transaction to log.
+     * @param cause         The cause of the transaction.
+     * @param causeReason   The reason of the cause
+     * @param account       The account being impacted by the change
+     * @param amount        The amount of money in this transaction.
+     * @param currency      The currency associated with this transaction
+     * @param worldName     The world name associated with this transaction
      */
     public void writeLog(LogInfo info, Cause cause, String causeReason, Account account, double amount, Currency currency, String worldName) {
         if (getMainConfig().getBoolean("System.Logging.Enabled")) {
@@ -733,7 +729,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     /**
      * Set the display format for any formatting through {@link #format(String, com.greatmancode.craftconomy3.currency.Currency, double, DisplayFormat)}
      *
-     * @param format
+     * @param format The format display to be set to
      */
     public void setDisplayFormat(DisplayFormat format) {
         ConfigTable table = getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "longmode").execute().findOne();
@@ -893,6 +889,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         configCommand.addCommand("bankprice", new ConfigBankPriceCommand());
         configCommand.addCommand("format", new ConfigFormatCommand());
         configCommand.addCommand("clearlog", new ConfigClearLogCommand());
+        configCommand.addCommand("reload", new ConfigReloadCommand());
         commandManager.registerMainCommand("craftconomy", configCommand);
 
         SubCommand payday = new SubCommand("payday", commandManager, null, 1);
@@ -1106,6 +1103,8 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         languageManager.addLanguageEntry("convert_save_worldgroup", "Converting worldgroups... (8/9)");
         languageManager.addLanguageEntry("convert_save_log", "Converting logs... (9/9)");
         languageManager.addLanguageEntry("convert_done", "Conversion done!");
+        languageManager.addLanguageEntry("config_reload_help_cmd", "/craftconomy reload - Reload craftconomy.");
+        languageManager.addLanguageEntry("craftconomy_reloaded", "Craftconomy has been reloaded!");
     }
 
     /**
