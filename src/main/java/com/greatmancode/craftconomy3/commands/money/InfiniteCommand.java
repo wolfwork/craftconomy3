@@ -25,8 +25,8 @@ import com.greatmancode.tools.commands.interfaces.CommandExecutor;
 public class InfiniteCommand extends CommandExecutor {
     @Override
     public void execute(String sender, String[] args) {
-        if (Common.getInstance().getAccountManager().exist(args[0])) {
-            Account account = Common.getInstance().getAccountManager().getAccount(args[0]);
+        if (Common.getInstance().getAccountManager().exist(args[0], false)) {
+            Account account = Common.getInstance().getAccountManager().getAccount(args[0], false);
             if (account.hasInfiniteMoney()) {
                 account.setInfiniteMoney(false);
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().getString("money_infinite_set_false"));

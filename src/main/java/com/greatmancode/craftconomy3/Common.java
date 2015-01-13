@@ -18,8 +18,6 @@
  */
 package com.greatmancode.craftconomy3;
 
-import com.alta189.simplesave.exceptions.ConnectionException;
-import com.alta189.simplesave.exceptions.TableRegistrationException;
 import com.greatmancode.craftconomy3.account.Account;
 import com.greatmancode.craftconomy3.account.AccountManager;
 import com.greatmancode.craftconomy3.commands.bank.*;
@@ -29,36 +27,31 @@ import com.greatmancode.craftconomy3.commands.group.GroupAddWorldCommand;
 import com.greatmancode.craftconomy3.commands.group.GroupCreateCommand;
 import com.greatmancode.craftconomy3.commands.group.GroupDelWorldCommand;
 import com.greatmancode.craftconomy3.commands.money.*;
-import com.greatmancode.craftconomy3.commands.payday.*;
 import com.greatmancode.craftconomy3.commands.setup.*;
 import com.greatmancode.craftconomy3.currency.Currency;
 import com.greatmancode.craftconomy3.currency.CurrencyManager;
-import com.greatmancode.craftconomy3.database.tables.*;
 import com.greatmancode.craftconomy3.events.EventManager;
 import com.greatmancode.craftconomy3.groups.WorldGroupsManager;
-import com.greatmancode.craftconomy3.payday.PayDayManager;
+import com.greatmancode.craftconomy3.storage.StorageHandler;
+import com.greatmancode.craftconomy3.utils.OldFormatConverter;
+import com.greatmancode.tools.caller.bukkit.BukkitServerCaller;
 import com.greatmancode.tools.caller.unittest.UnitTestServerCaller;
 import com.greatmancode.tools.commands.CommandHandler;
 import com.greatmancode.tools.commands.SubCommand;
 import com.greatmancode.tools.configuration.Config;
 import com.greatmancode.tools.configuration.ConfigurationManager;
-import com.greatmancode.tools.database.DatabaseManager;
-import com.greatmancode.tools.database.interfaces.DatabaseType;
-import com.greatmancode.tools.database.throwable.InvalidDatabaseConstructor;
 import com.greatmancode.tools.interfaces.caller.ServerCaller;
 import com.greatmancode.tools.language.LanguageManager;
 import com.greatmancode.tools.utils.Metrics;
+import com.greatmancode.tools.utils.Tools;
 import com.greatmancode.tools.utils.Updater;
+import org.json.simple.parser.ParseException;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,8 +67,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     private AccountManager accountManager = null;
     private ConfigurationManager config = null;
     private CurrencyManager currencyManager = null;
-    private DatabaseManager dbManager = null;
-    private PayDayManager paydayManager = null;
+    private StorageHandler storageHandler = null;
     private EventManager eventManager = null;
     private LanguageManager languageManager = null;
     private WorldGroupsManager worldGroupManager = null;
@@ -91,7 +83,6 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     private DisplayFormat displayFormat = null;
     private double holdings = 0.0;
     private double bankPrice = 0.0;
-    private int bankCurrencyId = 0;
 
     /**
      * Initialize the Common core.
@@ -122,7 +113,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
                     this.getLogger().log(Level.SEVERE, String.format(getLanguageManager().getString("metric_start_error"), e.getMessage()));
                 }
             }
-            if (getMainConfig().getBoolean("System.CheckNewVersion")) {
+            if (getMainConfig().getBoolean("System.CheckNewVersion") && (serverCaller instanceof BukkitServerCaller)) {
                 updater = new Updater(serverCaller, 35564, Updater.UpdateType.NO_DOWNLOAD, false);
                 if (updater.getResult() == Updater.UpdateResult.UPDATE_AVAILABLE) {
                     sendConsoleMessage(Level.WARNING, getLanguageManager().parse("running_old_version", updater.getLatestName()));
@@ -134,47 +125,18 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
             Common.getInstance().getServerCaller().registerPermission("craftconomy.*");
             commandManager = new CommandHandler(serverCaller);
             registerCommands();
-            //commandManager = new CommandLoader();
-            //commandManager.initialize();
             if (getMainConfig().getBoolean("System.Setup")) {
 
                 //We got quick setup. Let's do it!!!!
                 if (getMainConfig().getBoolean("System.QuickSetup.Enable")) {
-                    try {
-                        quickSetup();
-                        reloadPlugin();
-                    } catch (TableRegistrationException e) {
-                        e.printStackTrace();
-                        sendConsoleMessage(Level.SEVERE, String.format(getLanguageManager().getString("database_connect_error"), e.getMessage()));
-                        getServerCaller().disablePlugin();
-                        return;
-                    } catch (ConnectionException e) {
-                        e.printStackTrace();
-                        sendConsoleMessage(Level.SEVERE, String.format(getLanguageManager().getString("database_connect_error"), e.getMessage()));
-                        getServerCaller().disablePlugin();
-                        return;
-                    } catch (InvalidDatabaseConstructor invalidDatabaseConstructor) {
-                        invalidDatabaseConstructor.printStackTrace();
-                        sendConsoleMessage(Level.SEVERE, String.format(getLanguageManager().getString("database_connect_error"), invalidDatabaseConstructor.getMessage()));
-                        getServerCaller().disablePlugin();
-                    }
+                    quickSetup();
+                    reloadPlugin();
                 } else {
                     sendConsoleMessage(Level.WARNING, getLanguageManager().getString("loaded_setup_mode"));
                 }
             } else {
                 commandManager.setLevel(1);
-                try {
-                    initialiseDatabase();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    sendConsoleMessage(Level.SEVERE, String.format(getLanguageManager().getString("database_connect_error"), e.getMessage()));
-                    getServerCaller().disablePlugin();
-                    return;
-                } catch (InvalidDatabaseConstructor invalidDatabaseConstructor) {
-                    invalidDatabaseConstructor.printStackTrace();
-                    sendConsoleMessage(Level.SEVERE, String.format(getLanguageManager().getString("database_connect_error"), invalidDatabaseConstructor.getMessage()));
-                    getServerCaller().disablePlugin();
-                }
+                initialiseDatabase();
                 updateDatabase();
                 initializeCurrency();
                 sendConsoleMessage(Level.INFO, getLanguageManager().getString("loading_default_settings"));
@@ -184,7 +146,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
                 sendConsoleMessage(Level.INFO, getLanguageManager().getString("ready"));
             }
 
-            //TODO: Let's make that less ugly shall we?
+
             getServerCaller().registerPermission("craftconomy.money.log.others");
             initialized = true;
         }
@@ -195,20 +157,15 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      */
     @Override
     public void onDisable() {
-        if (getDatabaseManager() != null && getDatabaseManager().getDatabase() != null) {
+        if (getStorageHandler() != null) {
             getLogger().info(getLanguageManager().getString("closing_db_link"));
-            try {
-                getDatabaseManager().getDatabase().close();
-            } catch (ConnectionException e) {
-                this.getLogger().severe(String.format(getLanguageManager().getString("unable_close_db_link"), e.getMessage()));
-            }
+            getStorageHandler().disable();
         }
         // Managers
         accountManager = null;
         config = null;
         currencyManager = null;
-        dbManager = null;
-        paydayManager = null;
+        storageHandler = null;
         eventManager = null;
         languageManager = null;
         worldGroupManager = null;
@@ -223,7 +180,6 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         displayFormat = null;
         holdings = 0.0;
         bankPrice = 0.0;
-        bankCurrencyId = 0;
     }
 
     /**
@@ -244,23 +200,17 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         languageManager = new LanguageManager(serverCaller, serverCaller.getDataFolder(), "lang.yml");
         loadLanguage();
         serverCaller.setCommandPrefix(languageManager.getString("command_prefix"));
+        commandManager = new CommandHandler(serverCaller);
+        registerCommands();
         commandManager.setLevel(1);
-        try {
-            initialiseDatabase();
-            updateDatabase();
-            initializeCurrency();
-            sendConsoleMessage(Level.INFO, getLanguageManager().getString("loading_default_settings"));
-            loadDefaultSettings();
-            sendConsoleMessage(Level.INFO, getLanguageManager().getString("default_settings_loaded"));
-            startUp();
-            sendConsoleMessage(Level.INFO, getLanguageManager().getString("ready"));
-        } catch (TableRegistrationException e) {
-            e.printStackTrace();
-        } catch (ConnectionException e) {
-            e.printStackTrace();
-        } catch (InvalidDatabaseConstructor invalidDatabaseConstructor) {
-            invalidDatabaseConstructor.printStackTrace();
-        }
+        initialiseDatabase();
+        updateDatabase();
+        initializeCurrency();
+        sendConsoleMessage(Level.INFO, getLanguageManager().getString("loading_default_settings"));
+        loadDefaultSettings();
+        sendConsoleMessage(Level.INFO, getLanguageManager().getString("default_settings_loaded"));
+        startUp();
+        sendConsoleMessage(Level.INFO, getLanguageManager().getString("ready"));
 
     }
 
@@ -322,12 +272,12 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     }
 
     /**
-     * Retrieve the Database Manager.
+     * Retrieve the Storage Handler.
      *
-     * @return The Database Manager instance or null if the manager is not initialized.
+     * @return The Storage Handler instance or null if the handler is not initialized.
      */
-    public DatabaseManager getDatabaseManager() {
-        return dbManager;
+    public StorageHandler getStorageHandler() {
+        return storageHandler;
     }
 
     /**
@@ -346,15 +296,6 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      */
     public CommandHandler getCommandManager() {
         return commandManager;
-    }
-
-    /**
-     * Retrieve the Payday Manager
-     *
-     * @return The Command Manager instance or null if the manager is not initialized.
-     */
-    public PayDayManager getPaydayManager() {
-        return paydayManager;
     }
 
     /**
@@ -443,37 +384,16 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
 
     /**
      * Initialize the database Manager
-     *
-     * @throws TableRegistrationException If there's a issue with the tables being registered
-     * @throws ConnectionException If there's a issue conencting to MySQL
-     * @throws InvalidDatabaseConstructor If the database type requested is invalid.
      */
-    public void initialiseDatabase() throws TableRegistrationException, ConnectionException, InvalidDatabaseConstructor {
+    public void initialiseDatabase() {
         if (!databaseInitialized) {
             sendConsoleMessage(Level.INFO, getLanguageManager().getString("loading_database_manager"));
-            DatabaseType databaseType = DatabaseType.valueOf(getMainConfig().getString("System.Database.Type").toUpperCase());
-            if (DatabaseType.MYSQL.equals(databaseType)) {
-                dbManager = new DatabaseManager(databaseType, getMainConfig().getString("System.Database.Address"), getMainConfig().getInt("System.Database.Port"), getMainConfig().getString("System.Database.Username"), getMainConfig().getString("System.Database.Password"), getMainConfig().getString("System.Database.Db"), getMainConfig().getString("System.Database.Prefix"), serverCaller);
-            } else {
-                dbManager = new DatabaseManager(databaseType, getMainConfig().getString("System.Database.Prefix"), new File(serverCaller.getDataFolder(), "database.db"), serverCaller);
-            }
+            storageHandler = new StorageHandler();
 
-            addMetricsGraph("Database Engine", databaseType.name());
-
-            dbManager.registerTable(AccountTable.class);
-            dbManager.registerTable(AccessTable.class);
-            dbManager.registerTable(BalanceTable.class);
-            dbManager.registerTable(CurrencyTable.class);
-            dbManager.registerTable(ConfigTable.class);
-            dbManager.registerTable(PayDayTable.class);
-            dbManager.registerTable(ExchangeTable.class);
-            dbManager.registerTable(WorldGroupTable.class);
-            dbManager.registerTable(LogTable.class);
-            dbManager.connect();
-
-            if (getMainConfig().getBoolean("System.Database.ConvertFromSQLite")) {
+            //TODO: Re-support that
+            /*if (getMainConfig().getBoolean("System.Database.ConvertFromSQLite")) {
                 convertDatabase(dbManager);
-            }
+            }*/
             databaseInitialized = true;
             sendConsoleMessage(Level.INFO, getLanguageManager().getString("database_manager_loaded"));
         }
@@ -484,69 +404,12 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      *
      * @param dbManagernew The MySQL instance
      */
-    private void convertDatabase(DatabaseManager dbManagernew) throws InvalidDatabaseConstructor, TableRegistrationException, ConnectionException {
+    /*private void convertDatabase(DatabaseManager dbManagernew) throws InvalidDatabaseConstructor {
         sendConsoleMessage(Level.INFO, getLanguageManager().getString("starting_database_convert"));
-        DatabaseManager sqliteManager = new DatabaseManager(DatabaseType.SQLITE, getMainConfig().getString("System.Database.Prefix"), new File(serverCaller.getDataFolder(), "database.db"), serverCaller);
-        sqliteManager.registerTable(AccountTable.class);
-        sqliteManager.registerTable(AccessTable.class);
-        sqliteManager.registerTable(BalanceTable.class);
-        sqliteManager.registerTable(CurrencyTable.class);
-        sqliteManager.registerTable(ConfigTable.class);
-        sqliteManager.registerTable(PayDayTable.class);
-        sqliteManager.registerTable(ExchangeTable.class);
-        sqliteManager.registerTable(WorldGroupTable.class);
-        sqliteManager.registerTable(LogTable.class);
-        sqliteManager.connect();
-
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_account"));
-        for (AccountTable entry : sqliteManager.getDatabase().select(AccountTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_access"));
-        for (AccessTable entry : sqliteManager.getDatabase().select(AccessTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_balance"));
-        for (BalanceTable entry : sqliteManager.getDatabase().select(BalanceTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_currency"));
-        for (CurrencyTable entry : sqliteManager.getDatabase().select(CurrencyTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_config"));
-        for (ConfigTable entry : sqliteManager.getDatabase().select(ConfigTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_payday"));
-        for (PayDayTable entry : sqliteManager.getDatabase().select(PayDayTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_exchange"));
-        for (ExchangeTable entry : sqliteManager.getDatabase().select(ExchangeTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_worldgroup"));
-        for (WorldGroupTable entry : sqliteManager.getDatabase().select(WorldGroupTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_save_log"));
-        for (LogTable entry : sqliteManager.getDatabase().select(LogTable.class).execute().find()) {
-            entry.setId(0);
-            dbManager.getDatabase().save(entry);
-        }
+        new SQLiteToMySQLConverter().run();
         sendConsoleMessage(Level.INFO, getLanguageManager().getString("convert_done"));
         getMainConfig().setValue("System.Database.ConvertFromSQLite", false);
-        sqliteManager.close();
-    }
+    }*/
 
     /**
      * Initialize the {@link CurrencyManager}
@@ -571,7 +434,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     }
 
     /**
-     * Initialize the {@link AccountManager}, {@link PayDayManager}, Metrics and {@link EventManager}
+     * Initialize the {@link AccountManager}, Metrics and {@link EventManager}
      */
     public void startUp() {
         sendConsoleMessage(Level.INFO, getLanguageManager().getString("loading_account_manager"));
@@ -579,9 +442,6 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         //addMetricsGraph("Multiworld", getConfigurationManager().isMultiWorld());
         startMetrics();
         sendConsoleMessage(Level.INFO, getLanguageManager().getString("account_manager_loaded"));
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("loading_payday_manager"));
-        paydayManager = new PayDayManager();
-        sendConsoleMessage(Level.INFO, getLanguageManager().getString("payday_manager_loaded"));
         eventManager = new EventManager();
         initializeWorldGroup();
     }
@@ -611,11 +471,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      * @param value The value of the entry
      */
     public void addMetricsGraph(String title, boolean value) {
-        String stringEnabled = "No";
-        if (value) {
-            stringEnabled = "Yes";
-        }
-        addMetricsGraph(title, stringEnabled);
+        addMetricsGraph(title, value ? "Yes" : "No");
     }
 
     /**
@@ -623,6 +479,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      */
     public void startMetrics() {
         if (metrics != null) {
+            getLogger().info("Starting Metrics.");
             metrics.start();
         }
     }
@@ -630,26 +487,17 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     /**
      * Write a transaction to the Log.
      *
-     * @param info          The type of transaction to log.
-     * @param cause         The cause of the transaction.
-     * @param causeReason   The reason of the cause
-     * @param account       The account being impacted by the change
-     * @param amount        The amount of money in this transaction.
-     * @param currency      The currency associated with this transaction
-     * @param worldName     The world name associated with this transaction
+     * @param info        The type of transaction to log.
+     * @param cause       The cause of the transaction.
+     * @param causeReason The reason of the cause
+     * @param account     The account being impacted by the change
+     * @param amount      The amount of money in this transaction.
+     * @param currency    The currency associated with this transaction
+     * @param worldName   The world name associated with this transaction
      */
     public void writeLog(LogInfo info, Cause cause, String causeReason, Account account, double amount, Currency currency, String worldName) {
         if (getMainConfig().getBoolean("System.Logging.Enabled")) {
-            LogTable log = new LogTable();
-            log.setUsername_id(account.getAccountID());
-            log.setAmount(amount);
-            log.setType(info);
-            log.setCause(cause);
-            log.setCauseReason(causeReason);
-            log.setCurrencyName(currency.getName());
-            log.setWorldName(worldName);
-            log.setTimestamp(new Timestamp(System.currentTimeMillis()));
-            getDatabaseManager().getDatabase().save(log);
+            getStorageHandler().getStorageEngine().saveLog(info, cause, causeReason, account, amount, currency, worldName);
         }
     }
 
@@ -672,9 +520,9 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
     }
 
     /**
-     * Retrieve the {@link LanguageManager}
+     * Retrieve the {@link com.greatmancode.tools.language.LanguageManager}
      *
-     * @return The {@link LanguageManager}
+     * @return The {@link com.greatmancode.tools.language.LanguageManager}
      */
     public LanguageManager getLanguageManager() {
         return languageManager;
@@ -702,18 +550,29 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      * Reload the default settings.
      */
     public void loadDefaultSettings() {
-        displayFormat = DisplayFormat.valueOf(getDatabaseManager().getDatabase().select(ConfigTable.class).where().contains(ConfigTable.NAME_FIELD, "longmode").execute().findOne().getValue().toUpperCase());
-        addMetricsGraph("Display Format", displayFormat.name());
-        holdings = Double.parseDouble(getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "holdings").execute().findOne().getValue());
-        bankPrice = Double.parseDouble(getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "bankprice").execute().findOne().getValue());
-        ConfigTable currencyId = getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "bankcurrency").execute().findOne();
-        if (currencyId != null) {
-            bankCurrencyId = Integer.parseInt(currencyId.getValue());
+        String value = getStorageHandler().getStorageEngine().getConfigEntry("longmode");
+        if (value != null) {
+            displayFormat = DisplayFormat.valueOf(value.toUpperCase());
+        } else {
+            getStorageHandler().getStorageEngine().setConfigEntry("longmode", "long");
+            displayFormat = DisplayFormat.LONG;
         }
-
-        // Test if the currency is good. Else we revert it to the default value.
-        if (getCurrencyManager().getCurrency(bankCurrencyId) == null) {
-            bankCurrencyId = getCurrencyManager().getDefaultCurrency().getDatabaseID();
+        addMetricsGraph("Display Format", displayFormat.toString());
+        value = getStorageHandler().getStorageEngine().getConfigEntry("holdings");
+        if (value != null && Tools.isValidDouble(value)) {
+            holdings = Double.parseDouble(value);
+        } else {
+            getStorageHandler().getStorageEngine().setConfigEntry("holdings", 100.0 + "");
+            sendConsoleMessage(Level.SEVERE, "No default value was set for account creation or was invalid! Defaulting to 100.");
+            holdings = 100.0;
+        }
+        value = getStorageHandler().getStorageEngine().getConfigEntry("bankprice");
+        if (value != null && Tools.isValidDouble(value)) {
+            bankPrice = Double.parseDouble(value);
+        } else {
+            getStorageHandler().getStorageEngine().setConfigEntry("bankprice", 100.0 + "");
+            sendConsoleMessage(Level.SEVERE, "No default value was set for bank creation or was invalid! Defaulting to 100.");
+            bankPrice = 100.0;
         }
     }
 
@@ -732,9 +591,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      * @param format The format display to be set to
      */
     public void setDisplayFormat(DisplayFormat format) {
-        ConfigTable table = getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "longmode").execute().findOne();
-        table.setValue(format.name());
-        getDatabaseManager().getDatabase().save(table);
+        getStorageHandler().getStorageEngine().setConfigEntry("longmode", format.toString());
         displayFormat = format;
     }
 
@@ -753,9 +610,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      * @param value the default amount of money
      */
     public void setDefaultHoldings(double value) {
-        ConfigTable table = getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "holdings").execute().findOne();
-        table.setValue(String.valueOf(value));
-        getDatabaseManager().getDatabase().save(table);
+        getStorageHandler().getStorageEngine().setConfigEntry("holdings", String.valueOf(value));
         holdings = value;
     }
 
@@ -774,54 +629,22 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      * @param value the bank account creation price
      */
     public void setBankPrice(double value) {
-        ConfigTable table = getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "bankprice").execute().findOne();
-        table.setValue(String.valueOf(value));
-        getDatabaseManager().getDatabase().save(table);
+        getStorageHandler().getStorageEngine().setConfigEntry("bankprice", String.valueOf(value));
         bankPrice = value;
     }
 
     /**
-     * Retrieve the default currency ID for a bank account
-     *
-     * @return The default currency ID.
-     */
-    public int getBankCurrencyId() {
-        return bankCurrencyId;
-    }
-
-    /**
      * Perform a quick setup
-     *
-     * @throws TableRegistrationException
-     * @throws ConnectionException
-     * @throws InvalidDatabaseConstructor
      */
-    private void quickSetup() throws TableRegistrationException, ConnectionException, InvalidDatabaseConstructor {
+    private void quickSetup() {
         initialiseDatabase();
         Common.getInstance().initializeCurrency();
-        Common.getInstance().getCurrencyManager().addCurrency(getMainConfig().getString("System.QuickSetup.Currency.Name"), getMainConfig().getString("System.QuickSetup.Currency.NamePlural"), getMainConfig().getString("System.QuickSetup.Currency.Minor"), getMainConfig().getString("System.QuickSetup.Currency.MinorPlural"), 0.0, getMainConfig().getString("System.QuickSetup.Currency.Sign"), true);
-        int dbId = Common.getInstance().getCurrencyManager().getCurrency(getMainConfig().getString("System.QuickSetup.Currency.Name")).getDatabaseID();
-        Common.getInstance().getCurrencyManager().setDefault(dbId);
-        ConfigTable table = new ConfigTable();
-        table.setName("bankcurrency");
-        table.setValue(dbId + "");
-        Common.getInstance().getDatabaseManager().getDatabase().save(table);
-        table = new ConfigTable();
-        table.setName("holdings");
-        table.setValue(getMainConfig().getString("System.QuickSetup.StartBalance"));
-        Common.getInstance().getDatabaseManager().getDatabase().save(table);
-        table = new ConfigTable();
-        table.setName("bankprice");
-        table.setValue(getMainConfig().getString("System.QuickSetup.PriceBank"));
-        Common.getInstance().getDatabaseManager().getDatabase().save(table);
-        table = new ConfigTable();
-        table.setName("longmode");
-        table.setValue(DisplayFormat.valueOf(getMainConfig().getString("System.QuickSetup.DisplayMode").toUpperCase()).name());
-        Common.getInstance().getDatabaseManager().getDatabase().save(table);
-        table = new ConfigTable();
-        table.setName("dbVersion");
-        table.setValue("4");
-        Common.getInstance().getDatabaseManager().getDatabase().save(table);
+        Currency currency = Common.getInstance().getCurrencyManager().addCurrency(getMainConfig().getString("System.QuickSetup.Currency.Name"), getMainConfig().getString("System.QuickSetup.Currency.NamePlural"), getMainConfig().getString("System.QuickSetup.Currency.Minor"), getMainConfig().getString("System.QuickSetup.Currency.MinorPlural"), getMainConfig().getString("System.QuickSetup.Currency.Sign"), true);
+        Common.getInstance().getCurrencyManager().setDefault(currency);
+        Common.getInstance().getCurrencyManager().setDefaultBankCurrency(currency);
+        getStorageHandler().getStorageEngine().setConfigEntry("longmode", DisplayFormat.valueOf(getMainConfig().getString("System.QuickSetup.DisplayMode").toUpperCase()).toString());
+        getStorageHandler().getStorageEngine().setConfigEntry("holdings", getMainConfig().getString("System.QuickSetup.StartBalance"));
+        getStorageHandler().getStorageEngine().setConfigEntry("bankprice", getMainConfig().getString("System.QuickSetup.PriceBank"));
         initializeCurrency();
         loadDefaultSettings();
         Common.getInstance().startUp();
@@ -891,14 +714,6 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         configCommand.addCommand("clearlog", new ConfigClearLogCommand());
         configCommand.addCommand("reload", new ConfigReloadCommand());
         commandManager.registerMainCommand("craftconomy", configCommand);
-
-        SubCommand payday = new SubCommand("payday", commandManager, null, 1);
-        payday.addCommand("create", new PayDayCreateCommand());
-        payday.addCommand("delete", new PayDayDeleteCommand());
-        payday.addCommand("modify", new PayDayModifyCommand());
-        payday.addCommand("list", new PayDayListCommand());
-        payday.addCommand("info", new PayDayInfoCommand());
-        commandManager.registerMainCommand("payday", payday);
 
         SubCommand ccgroup = new SubCommand("ccgroup", commandManager, null, 1);
         ccgroup.addCommand("create", new GroupCreateCommand());
@@ -1129,7 +944,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         mainConfig.setValue("System.Case-sentitive", false);
         mainConfig.setValue("System.CreateOnLogin", false);
         mainConfig.setValue("System.Logging.Enabled", false);
-        mainConfig.setValue("System.Database.Type", "sqlite");
+        mainConfig.setValue("System.Database.Type", "h2");
         mainConfig.setValue("System.Database.Address", "localhost");
         mainConfig.setValue("System.Database.Port", 3306);
         mainConfig.setValue("System.Database.Username", "root");
@@ -1143,128 +958,28 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      * Run a database update.
      */
     private void updateDatabase() {
-        ConfigTable dbVersion = Common.getInstance().getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "dbVersion").execute().findOne();
-        if (dbVersion == null) {
-            alertOldDbVersion("0", 1);
-            List<PayDayTable> payday = Common.getInstance().getDatabaseManager().getDatabase().select(PayDayTable.class).execute().find();
-            if (payday != null) {
-                for (PayDayTable entry : payday) {
-                    entry.setName(entry.getName().toLowerCase());
-                    Common.getInstance().getDatabaseManager().getDatabase().save(entry);
+        if (getMainConfig().getInt("Database.dbVersion") == 0) {
+            alertOldDbVersion(0, 1);
+            //We first check if we have the DB version in the database. If we do, we have a old layout in our hands
+            String value = getStorageHandler().getStorageEngine().getConfigEntry("dbVersion");
+            if (value != null) {
+                //We have a old database, do the whole conversion
+                try {
+                    new OldFormatConverter().run();
+                    getMainConfig().setValue("Database.dbVersion", 1);
+                    sendConsoleMessage(Level.INFO, "Updated to Revision 1!");
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (ParseException e) {
+                    e.printStackTrace();
                 }
-            }
-            dbVersion = new ConfigTable();
-            dbVersion.setName("dbVersion");
-            dbVersion.setValue(1 + "");
-            Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Updated to Revision 1!");
-        }
-        if (dbVersion.getValue().equalsIgnoreCase("")) {
-            alertOldDbVersion(dbVersion.getValue(), 1);
-            dbVersion.setValue(1 + "");
-            Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Really updated to Revision 1.");
-        }
-        if (dbVersion.getValue().equalsIgnoreCase("1")) {
-            alertOldDbVersion(dbVersion.getValue(), 2);
-            // Testing to see if in the config we have true or false as the display value
-            ConfigTable display = Common.getInstance().getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "longmode").execute().findOne();
-            if (display.getValue().equals("true") || display.getValue().equalsIgnoreCase("false")) {
-                if (display.getValue().equals("true")) {
-                    display.setValue("long");
-                }
-                if (display.getValue().equals("false")) {
-                    display.setValue("short");
-                }
-                Common.getInstance().getDatabaseManager().getDatabase().save(display);
-                dbVersion.setValue(2 + "");
-                Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-                Common.getInstance().sendConsoleMessage(Level.INFO, "Updated to Revision 2!");
-            }
-        }
-        if (dbVersion.getValue().equalsIgnoreCase("2")) {
-            alertOldDbVersion(dbVersion.getValue(), 3);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Checking if the display format is valid.");
-            ConfigTable display = Common.getInstance().getDatabaseManager().getDatabase().select(ConfigTable.class).where().equal(ConfigTable.NAME_FIELD, "longmode").execute().findOne();
-            if (!display.getValue().equalsIgnoreCase("long") && !display.getValue().equalsIgnoreCase("small") && !display.getValue().equalsIgnoreCase("sign") && !display.getValue().equalsIgnoreCase("majoronly")) {
-                Common.getInstance().sendConsoleMessage(Level.INFO,"Display format is invalid. Saving a valid one.");
-                display.setValue("long");
-                Common.getInstance().getDatabaseManager().getDatabase().save(display);
-            }
-            dbVersion.setValue(3 + "");
-            Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Updated to Revision 3!");
-        }
-        if (dbVersion.getValue().equalsIgnoreCase("3")) {
-            alertOldDbVersion(dbVersion.getValue(), 4);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Converting worlds to the new format.");
-            Common.getInstance().initializeWorldGroup();
-            ResultSet result = Common.getInstance().getDatabaseManager().getDatabase().directQueryWithResult("SELECT DISTINCT worldName FROM " + getMainConfig().getString("System.Database.Prefix") + "balance");
-            try {
-                while (result.next()) {
-                    String entry = result.getString("worldName");
-                    Common.getInstance().getWorldGroupManager().addWorldGroup(entry);
-                    Common.getInstance().getWorldGroupManager().addWorldToGroup(entry, entry);
-                }
-                result.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            dbVersion.setValue(4 + "");
-            Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Updated to Revision 4!");
-        }
-        if (dbVersion.getValue().equalsIgnoreCase("4")) {
-            alertOldDbVersion(dbVersion.getValue(), 5);
-            Common.getInstance().getDatabaseManager().getDatabase().directQuery("UPDATE " + getMainConfig().getString("System.Database.Prefix") + "balance SET worldName='default' WHERE worldName='any';");
-            dbVersion.setValue(5 + "");
-            Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Updated to Revision 5!");
-        }
-        if (dbVersion.getValue().equalsIgnoreCase("5")) {
-            alertOldDbVersion(dbVersion.getValue(), 6);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Notice: This may take some time.");
-            List<BalanceTable> entryList = Common.getInstance().getDatabaseManager().getDatabase().select(BalanceTable.class).execute().find();
-            int amount = 0;
-            for (BalanceTable entry : entryList) {
-                entry.setBalance(Account.format(entry.getBalance()));
-                Common.getInstance().getDatabaseManager().getDatabase().save(entry);
-                if (amount % 100 == 0) {
-                    Common.getInstance().sendConsoleMessage(Level.INFO, amount + " of " + entryList.size() + " updated!");
-                }
-                amount++;
-            }
-            dbVersion.setValue(6 + "");
-            Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Updated to Revision 6!");
-        }
-        if (dbVersion.getValue().equalsIgnoreCase("6")) {
-            alertOldDbVersion(dbVersion.getValue(), 7);
-            DatabaseType databaseType = DatabaseType.valueOf(getMainConfig().getString("System.Database.Type").toUpperCase());
-            if (databaseType.equals(DatabaseType.SQLITE)) {
-                getDatabaseManager().getDatabase().directQuery("CREATE INDEX ON " + getMainConfig().getString("System.Database.Prefix") + "account(name(50))");
-                getDatabaseManager().getDatabase().directQuery("CREATE INDEX ON " + getMainConfig().getString("System.Database.Prefix") + "account(uuid(50))");
             } else {
-                getDatabaseManager().getDatabase().directQuery("CREATE INDEX account_name_index ON " + getMainConfig().getString("System.Database.Prefix") + "account(name(50))");
-                getDatabaseManager().getDatabase().directQuery("CREATE INDEX account_uuid_index ON " + getMainConfig().getString("System.Database.Prefix") + "account(uuid(50))");
+                getMainConfig().setValue("Database.dbVersion", 1);
+                sendConsoleMessage(Level.INFO, "Updated to Revision 1!");
             }
-            dbVersion.setValue(7 + "");
-            Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Updated to Revision 7!");
-        }
-        if (dbVersion.getValue().equalsIgnoreCase("7")) {
-            alertOldDbVersion(dbVersion.getValue(), 8);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Notice: This may take some time.");
-            DatabaseType databaseType = DatabaseType.valueOf(getMainConfig().getString("System.Database.Type").toUpperCase());
-            if (databaseType.equals(DatabaseType.MYSQL)) {
-                getDatabaseManager().getDatabase().directQuery("ALTER TABLE " + getMainConfig().getString("System.Database.Prefix") + "balance ADD CONSTRAINT fk_balance_account FOREIGN KEY (username_id) REFERENCES " + getMainConfig().getString("System.Database.Prefix") + "account(id)");
-                getDatabaseManager().getDatabase().directQuery("ALTER TABLE " + getMainConfig().getString("System.Database.Prefix") + "balance ADD CONSTRAINT fk_balance_currency FOREIGN KEY (currency_id) REFERENCES " + getMainConfig().getString("System.Database.Prefix") + "currency(id)");
-                getDatabaseManager().getDatabase().directQuery("ALTER TABLE " + getMainConfig().getString("System.Database.Prefix") + "log ADD CONSTRAINT fk_log_account FOREIGN KEY (username_id) REFERENCES " + getMainConfig().getString("System.Database.Prefix") + "account(id)");
-                getDatabaseManager().getDatabase().directQuery("ALTER TABLE " + getMainConfig().getString("System.Database.Prefix") + "acl ADD CONSTRAINT fk_acl_account FOREIGN KEY (account_id) REFERENCES " + getMainConfig().getString("System.Database.Prefix") + "account(id)");
-            }
-            dbVersion.setValue(8 + "");
-            Common.getInstance().getDatabaseManager().getDatabase().save(dbVersion);
-            Common.getInstance().sendConsoleMessage(Level.INFO, "Updated to Revision 8!");
         }
     }
 
@@ -1274,7 +989,9 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
      * @param currentVersion The current version
      * @param newVersion     The database update version
      */
-    private void alertOldDbVersion(String currentVersion, int newVersion) {
+    private void alertOldDbVersion(int currentVersion, int newVersion) {
         Common.getInstance().sendConsoleMessage(Level.INFO, "Your database is out of date! (Version " + currentVersion + "). Updating it to Revision " + newVersion + ".");
     }
+
+
 }

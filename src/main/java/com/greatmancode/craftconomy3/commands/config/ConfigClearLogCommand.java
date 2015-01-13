@@ -30,7 +30,7 @@ public class ConfigClearLogCommand extends CommandExecutor {
         Calendar calendar = Calendar.getInstance();
         try {
             calendar.add(Calendar.DAY_OF_MONTH, -Integer.parseInt(args[0]));
-            Common.getInstance().getDatabaseManager().getDatabase().directQuery("DELETE FROM cc3_log WHERE timestamp<='" + new Timestamp(calendar.getTimeInMillis()).getTime() + "'");
+            Common.getInstance().getStorageHandler().getStorageEngine().cleanLog(new Timestamp(calendar.getTimeInMillis()));
             Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().getString("log_cleared"));
         } catch (NumberFormatException e) {
             Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().getString("invalid_time_log"));

@@ -24,6 +24,7 @@ import com.greatmancode.craftconomy3.commands.money.BalanceCommand;
 import com.greatmancode.craftconomy3.commands.money.CreateCommand;
 import com.greatmancode.craftconomy3.commands.money.DeleteCommand;
 import com.greatmancode.craftconomy3.commands.money.GiveCommand;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,9 +45,12 @@ public class TestMoneyCommands {
         new TestInitializator();
     }
 
+    @After
+    public void close() { Common.getInstance().onDisable();};
+
     @Test
     public void testBalanceCommand() {
-        Common.getInstance().getAccountManager().getAccount(TEST_USER);
+        Common.getInstance().getAccountManager().getAccount(TEST_USER, false);
         BalanceCommand command = new BalanceCommand();
         command.execute(TEST_USER,new String[]{TEST_USER});
         command.execute(TEST_USER, new String[]{"unknown"});
@@ -56,32 +60,32 @@ public class TestMoneyCommands {
     public void testCreateCommand() {
         CreateCommand command = new CreateCommand();
         command.execute(TEST_USER, new String[] {"testaccount"});
-        assertTrue(Common.getInstance().getAccountManager().exist("testaccount"));
+        assertTrue(Common.getInstance().getAccountManager().exist("testaccount", false));
         command.execute(TEST_USER, new String[] {"testaccount"});
     }
 
     @Test
     public void testDeleteCommand() {
-        Common.getInstance().getAccountManager().getAccount("testaccount");
+        Common.getInstance().getAccountManager().getAccount("testaccount", false);
         DeleteCommand command = new DeleteCommand();
         command.execute(TEST_USER, new String[] {"testaccount"});
-        assertFalse(Common.getInstance().getAccountManager().exist("testaccount"));
+        assertFalse(Common.getInstance().getAccountManager().exist("testaccount", false));
     }
 
     @Test
     public void testGiveCommand() {
-        Common.getInstance().getAccountManager().getAccount(TEST_USER);
-        double initialValue = Common.getInstance().getAccountManager().getAccount(TEST_USER).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName());
+        Common.getInstance().getAccountManager().getAccount(TEST_USER, false);
+        double initialValue = Common.getInstance().getAccountManager().getAccount(TEST_USER, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName());
         GiveCommand command = new GiveCommand();
         command.execute(TEST_USER, new String[]{TEST_USER, "200"});
-        assertEquals(initialValue + 200, Common.getInstance().getAccountManager().getAccount(TEST_USER).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
+        assertEquals(initialValue + 200, Common.getInstance().getAccountManager().getAccount(TEST_USER, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
         command.execute(TEST_USER, new String[] {TEST_USER, "di3"});
-        assertEquals(initialValue + 200, Common.getInstance().getAccountManager().getAccount(TEST_USER).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
+        assertEquals(initialValue + 200, Common.getInstance().getAccountManager().getAccount(TEST_USER, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
         command.execute(TEST_USER, new String[]{TEST_USER2, "200"});
-        assertEquals(initialValue + 200, Common.getInstance().getAccountManager().getAccount(TEST_USER).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
+        assertEquals(initialValue + 200, Common.getInstance().getAccountManager().getAccount(TEST_USER, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
         command.execute(TEST_USER, new String[]{TEST_USER, "200", "Dollar"});
-        assertEquals(initialValue + 400, Common.getInstance().getAccountManager().getAccount(TEST_USER).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
+        assertEquals(initialValue + 400, Common.getInstance().getAccountManager().getAccount(TEST_USER, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
         command.execute(TEST_USER, new String[] {TEST_USER, "200", "fake"});
-        assertEquals(initialValue + 400, Common.getInstance().getAccountManager().getAccount(TEST_USER).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
+        assertEquals(initialValue + 400, Common.getInstance().getAccountManager().getAccount(TEST_USER, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()),0);
     }
 }

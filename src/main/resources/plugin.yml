@@ -1,6 +1,6 @@
 name: Craftconomy3
 main: com.greatmancode.craftconomy3.tools.interfaces.BukkitLoader
-version: ${version} ${BUILD_TAG}
+version: ${version}
 author: Greatman
 commands:
     money:
@@ -13,9 +13,7 @@ commands:
       description: Setup command
     currency:
       description: Currency management command
-    payday:
-      description: Payday management command
     ccgroup:
-      description: world group management command.
+      description: world group management command
     pay:
       description: /money pay shortcut

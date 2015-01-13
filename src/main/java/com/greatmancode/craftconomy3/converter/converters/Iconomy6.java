@@ -18,20 +18,20 @@
  */
 package com.greatmancode.craftconomy3.converter.converters;
 
-import com.alta189.simplesave.Database;
-import com.alta189.simplesave.DatabaseFactory;
-import com.alta189.simplesave.exceptions.ConnectionException;
-import com.alta189.simplesave.exceptions.TableRegistrationException;
-import com.alta189.simplesave.mysql.MySQLConfiguration;
-import com.alta189.simplesave.sqlite.SQLiteConfiguration;
 import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.craftconomy3.converter.Converter;
-import com.greatmancode.craftconomy3.database.tables.iconomy.IConomyTable;
+import com.greatmancode.craftconomy3.storage.sql.tables.iconomy.IConomyTable;
+import com.greatmancode.tools.utils.Tools;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import java.io.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -42,27 +42,31 @@ import java.util.logging.Level;
  */
 public class Iconomy6 extends Converter {
     private BufferedReader flatFileReader = null;
-    private Database db = null;
+    private HikariDataSource db;
 
     public Iconomy6() {
         getDbTypes().add("flatfile");
         getDbTypes().add("minidb");
         getDbTypes().add("sqlite");
         getDbTypes().add("mysql");
+        getDbTypes().add("h2");
     }
 
     @Override
     public List<String> getDbInfo() {
 
         if (getDbInfoList().size() == 0) {
-            if (getSelectedDbType().equals("flatfile") || getSelectedDbType().equals("minidb") || getSelectedDbType().equals("sqlite")) {
+            if ("flatfile".equals(getSelectedDbType()) || "minidb".equals(getSelectedDbType()) || "sqlite".equals(getSelectedDbType())) {
                 getDbInfoList().add("filename");
-            } else if (getSelectedDbType().equals("mysql")) {
+            } else if ("mysql".equals(getSelectedDbType())) {
                 getDbInfoList().add("address");
                 getDbInfoList().add("port");
                 getDbInfoList().add("username");
                 getDbInfoList().add("password");
                 getDbInfoList().add("database");
+            } else if ("h2".equals(getSelectedDbType())) {
+                getDbInfoList().add("tablename");
+                getDbInfoList().add("filename");
             }
         }
         return getDbInfoList();
@@ -71,26 +75,18 @@ public class Iconomy6 extends Converter {
     @Override
     public boolean connect() {
         boolean result = false;
-        if (getSelectedDbType().equals("flatfile") || getSelectedDbType().equals("minidb")) {
+        if ("flatfile".equals(getSelectedDbType()) || "minidb".equals(getSelectedDbType())) {
             result = loadFile();
-        } else if (getSelectedDbType().equals("mysql")) {
+        } else if ("mysql".equals(getSelectedDbType())) {
             loadMySQL();
-        } else if (getSelectedDbType().equals("sqlite")) {
+        } else if ("sqlite".equals(getSelectedDbType())) {
             loadSQLite();
+        } else if ("h2".equals(getSelectedDbType())) {
+            loadH2();
         }
 
         if (db != null) {
-
-            try {
-                db.registerTable(IConomyTable.class);
-                db.setCheckTableOnRegistration(false);
-                db.connect();
-                result = true;
-            } catch (TableRegistrationException e) {
-                Common.getInstance().getLogger().severe("Unable to register iConomy tables. Reason: " + e.getMessage());
-            } catch (ConnectionException e) {
-                Common.getInstance().getLogger().severe("Unable to connect to iConomy database. Reason: " + e.getMessage());
-            }
+            result = true;
         }
         return result;
     }
@@ -119,24 +115,36 @@ public class Iconomy6 extends Converter {
      */
     private void loadMySQL() {
         try {
-            MySQLConfiguration config = new MySQLConfiguration();
-            config.setHost(getDbConnectInfo().get("address"));
-            config.setUser(getDbConnectInfo().get("username"));
-            config.setPassword(getDbConnectInfo().get("password"));
-            config.setDatabase(getDbConnectInfo().get("database"));
-            config.setPort(Integer.parseInt(getDbConnectInfo().get("port")));
-            db = DatabaseFactory.createNewDatabase(config);
+            HikariConfig config = new HikariConfig();
+            config.setMaximumPoolSize(10);
+            config.setDataSourceClassName("com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
+            config.addDataSourceProperty("serverName", getDbConnectInfo().get("address"));
+            config.addDataSourceProperty("port", getDbConnectInfo().get("port"));
+            config.addDataSourceProperty("databaseName", getDbConnectInfo().get("database"));
+            config.addDataSourceProperty("user", getDbConnectInfo().get("username"));
+            config.addDataSourceProperty("password", getDbConnectInfo().get("password"));
+            config.addDataSourceProperty("autoDeserialize", true);
+            db = new HikariDataSource(config);
         } catch (NumberFormatException e) {
             Common.getInstance().getLogger().severe("Illegal Port!");
         }
+    }
+
+    private void loadH2() {
+        HikariConfig config = new HikariConfig();
+        config.setMaximumPoolSize(10);
+        config.setDataSourceClassName("org.h2.jdbcx.JdbcDataSource");
+        config.addDataSourceProperty("user", "sa");
+        config.addDataSourceProperty("password", "sa");
+        config.addDataSourceProperty("url", "jdbc:h2:file:" + new File(Common.getInstance().getServerCaller().getDataFolder().getPath(), getDbConnectInfo().get("filename")).getAbsolutePath() + ";MV_STORE=FALSE");
+        db = new HikariDataSource(config);
     }
 
     /**
      * Allow to load a SQLite database.
      */
     private void loadSQLite() {
-        SQLiteConfiguration config = new SQLiteConfiguration(Common.getInstance().getServerCaller().getDataFolder() + File.separator + getDbConnectInfo().get("filename"));
-        db = DatabaseFactory.createNewDatabase(config);
+        //TODO Hikari this
     }
 
     @Override
@@ -178,8 +186,7 @@ public class Iconomy6 extends Converter {
                     Common.getInstance().sendConsoleMessage(Level.WARNING, "Line not formatted correctly. I read:" + Arrays.toString(info));
                 }
             }
-            addAccountToString(userList);
-            addBalance(sender, userList);
+            addAccountToString(sender, userList);
             result = true;
         } catch (IOException e) {
             Common.getInstance().getLogger().severe("A error occured while reading the iConomy database file! Message: " + e.getMessage());
@@ -194,21 +201,26 @@ public class Iconomy6 extends Converter {
      * @return True if the convert is done. Else false.
      */
     private boolean importDatabase(String sender) {
-        List<IConomyTable> icoList = db.select(IConomyTable.class).execute().find();
-        if (icoList != null && icoList.size() > 0) {
-            Iterator<IConomyTable> icoListIterator = icoList.iterator();
-            List<User> userList = new ArrayList<User>();
-            while (icoListIterator.hasNext()) {
-                IConomyTable entry = icoListIterator.next();
-                userList.add(new User(entry.getUsername(), entry.getBalance()));
-            }
-            addAccountToString(userList);
-            addBalance(sender, userList);
-        }
+        Connection connection = null;
+        PreparedStatement statement = null;
         try {
-            db.close();
-        } catch (ConnectionException e) {
-            Common.getInstance().getLogger().severe("Unable to disconnect from the iConomy database! Message: " + e.getMessage());
+            connection = db.getConnection();
+            if (getDbConnectInfo().get("tablename") != null) {
+                statement = connection.prepareStatement("SELECT * FROM " + getDbConnectInfo().get("tablename"));
+            } else {
+                statement = connection.prepareStatement(IConomyTable.SELECT_ENTRY);
+            }
+            ResultSet set = statement.executeQuery();
+            List<User> userList = new ArrayList<User>();
+            while (set.next()) {
+                userList.add(new User(set.getString("username"), set.getDouble("balance")));
+            }
+            addAccountToString(sender, userList);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            Tools.closeJDBCStatement(statement);
+            Tools.closeJDBCConnection(connection);
         }
         return true;
     }

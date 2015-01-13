@@ -21,7 +21,6 @@ package com.greatmancode.craftconomy3.commands.setup;
 import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.craftconomy3.DisplayFormat;
 import com.greatmancode.craftconomy3.NewSetupWizard;
-import com.greatmancode.craftconomy3.database.tables.ConfigTable;
 import com.greatmancode.tools.commands.interfaces.CommandExecutor;
 import com.greatmancode.tools.utils.Tools;
 
@@ -79,15 +78,7 @@ public class NewSetupBasicCommand extends CommandExecutor {
         if (args.length == 1) {
             try {
                 DisplayFormat format = DisplayFormat.valueOf(args[0].toUpperCase());
-                ConfigTable table = new ConfigTable();
-                table.setName("longmode");
-                table.setValue(format.name());
-                Common.getInstance().getDatabaseManager().getDatabase().save(table);
-                //The setup is made for the V4 database.
-                table = new ConfigTable();
-                table.setName("dbVersion");
-                table.setValue("4");
-                Common.getInstance().getDatabaseManager().getDatabase().save(table);
+                Common.getInstance().getStorageHandler().getStorageEngine().setConfigEntry("longmode", format.toString());
                 NewSetupWizard.setState(NewSetupWizard.CONVERT_STEP);
                 Common.getInstance().loadDefaultSettings();
                 Common.getInstance().startUp();
@@ -101,10 +92,7 @@ public class NewSetupBasicCommand extends CommandExecutor {
     private void bankMoney(String sender, String[] args) {
         if (args.length == 1) {
             if (Tools.isValidDouble(args[0])) {
-                ConfigTable table = new ConfigTable();
-                table.setName("bankprice");
-                table.setValue(args[0]);
-                Common.getInstance().getDatabaseManager().getDatabase().save(table);
+                Common.getInstance().getStorageHandler().getStorageEngine().setConfigEntry("bankprice", args[0]);
                 step = INTERNALSTEP.FORMAT;
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Now, let's select the display format you want the balance to be shown. Craftconomy have {{WHITE}}4 {{DARK_GREEN}} display formats");
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{WHITE}}Long{{DARK_GREEN}}: {{WHITE}}40 Dollars 1 Coin");
@@ -123,10 +111,7 @@ public class NewSetupBasicCommand extends CommandExecutor {
     private void defaultMoney(String sender, String[] args) {
         if (args.length == 1) {
             if (Tools.isValidDouble(args[0])) {
-                ConfigTable table = new ConfigTable();
-                table.setName("holdings");
-                table.setValue(args[0]);
-                Common.getInstance().getDatabaseManager().getDatabase().save(table);
+                Common.getInstance().getStorageHandler().getStorageEngine().setConfigEntry("holdings", args[0]);
                 step = INTERNALSTEP.BANK_PRICE;
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}How much do you want your players to pay for a {{WHITE}}bank account{{DARK_GREEN}}? Please type {{WHITE}}/ccsetup basic <amount>");
             } else {

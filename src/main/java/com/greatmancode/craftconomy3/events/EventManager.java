@@ -19,7 +19,7 @@
 package com.greatmancode.craftconomy3.events;
 
 import com.greatmancode.craftconomy3.Common;
-import com.greatmancode.craftconomy3.database.tables.AccountTable;
+import com.greatmancode.craftconomy3.account.Account;
 import com.greatmancode.tools.events.interfaces.EventHandler;
 import com.greatmancode.tools.events.interfaces.Listener;
 import com.greatmancode.tools.events.playerEvent.PlayerJoinEvent;
@@ -32,6 +32,7 @@ public class EventManager implements Listener {
 
     /**
      * Event handler for when a player is connecting to the server.
+     *
      * @param event The PlayerJoinEvent associated with the event
      */
     @EventHandler
@@ -41,22 +42,16 @@ public class EventManager implements Listener {
         }
         if (!Common.getInstance().getMainConfig().getBoolean("System.Setup")) {
             //We search if the UUID is in the database
-            AccountTable table = Common.getInstance().getDatabaseManager().getDatabase().select(AccountTable.class).where().equal("uuid", event.getPlayer().getUuid().toString()).execute().findOne();
-            if (table != null && !table.getName().equals(event.getPlayer().getName())) {
-                //Clear the cache of the player
-                Common.getInstance().getAccountManager().clearCache(table.getName());
-                table.setName(event.getPlayer().getName());
-                Common.getInstance().getDatabaseManager().getDatabase().save(table);
-            } else {
-                //Did the player already had a account? If so, let's insert his UUID
-                table = Common.getInstance().getDatabaseManager().getDatabase().select(AccountTable.class).where().equal("name", event.getPlayer().getName()).execute().findOne();
-                if (table != null) {
-                    table.setUuid(event.getPlayer().getUuid().toString());
-                    Common.getInstance().getDatabaseManager().getDatabase().save(table);
-                }
+            Account account = Common.getInstance().getStorageHandler().getStorageEngine().getAccount(event.getPlayer().getUuid());
+            if (account != null && !event.getPlayer().getName().equals(account.getAccountName())) {
+                Common.getInstance().getAccountManager().clearCache(account.getAccountName());
+                Common.getInstance().getStorageHandler().getStorageEngine().updateUsername(event.getPlayer().getName().toLowerCase(), event.getPlayer().getUuid());
+            } else if (account == null){
+                //We set deh UUID
+                Common.getInstance().getStorageHandler().getStorageEngine().updateUUID(event.getPlayer().getName(), event.getPlayer().getUuid());
             }
             if (Common.getInstance().getMainConfig().getBoolean("System.CreateOnLogin")) {
-                Common.getInstance().getAccountManager().getAccount(event.getPlayer().getName());
+                Common.getInstance().getAccountManager().getAccount(event.getPlayer().getName(), false);
             }
         }
     }

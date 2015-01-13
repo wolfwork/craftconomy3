@@ -18,12 +18,9 @@
  */
 package com.greatmancode.craftconomy3.commands.setup;
 
-import com.alta189.simplesave.exceptions.ConnectionException;
-import com.alta189.simplesave.exceptions.TableRegistrationException;
 import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.craftconomy3.NewSetupWizard;
 import com.greatmancode.tools.commands.interfaces.CommandExecutor;
-import com.greatmancode.tools.database.throwable.InvalidDatabaseConstructor;
 import com.greatmancode.tools.utils.Tools;
 
 import java.util.HashMap;
@@ -80,48 +77,33 @@ public class NewSetupDatabaseCommand extends CommandExecutor {
 
     private void start(String sender, String[] args) {
         if (args.length == 1) {
-            if (args[0].equalsIgnoreCase("sqlite")) {
-                step = INTERNALSTEP.SQLITE;
-                sqliteOrH2(sender, true);
-            } else if (args[0].equalsIgnoreCase("mysql")) {
+            if ("mysql".equalsIgnoreCase(args[0])) {
                 step = INTERNALSTEP.MYSQL;
                 Common.getInstance().getMainConfig().setValue(CONFIG_NODE, "mysql");
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}You selected {{WHITE}}MySQL{{DARK_GREEN}}. Please type {{WHITE}}/ccsetup database address <Your host>");
-            } else if (args[0].equalsIgnoreCase("h2")) {
+            } else if ("h2".equalsIgnoreCase(args[0])) {
                 step = INTERNALSTEP.H2;
-                sqliteOrH2(sender, false);
+                h2(sender);
             } else {
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_RED}}Invalid value!");
-                Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Please type {{WHITE}}/ccsetup database <sqlite/mysql/h2>");
+                Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Please type {{WHITE}}/ccsetup database <mysql/h2>");
             }
         }
     }
 
-    private void sqliteOrH2(String sender, boolean sqlite) {
-        if (sqlite) {
-            Common.getInstance().getMainConfig().setValue(CONFIG_NODE, "sqlite");
-        } else {
-            Common.getInstance().getMainConfig().setValue(CONFIG_NODE, "h2");
-        }
-        try {
-            Common.getInstance().initialiseDatabase();
-            done(sender);
-        } catch (TableRegistrationException e) {
-            Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, String.format(ERROR_MESSAGE, e.getMessage()));
-        } catch (ConnectionException e) {
-            Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, String.format(ERROR_MESSAGE, e.getMessage()));
-        } catch (InvalidDatabaseConstructor e) {
-            Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, String.format(ERROR_MESSAGE, e.getMessage()));
-        }
+    private void h2(String sender) {
+        Common.getInstance().getMainConfig().setValue(CONFIG_NODE, "h2");
+        Common.getInstance().initialiseDatabase();
+        done(sender);
     }
 
     private void mysql(String sender, String[] args) {
         if (args.length == 2) {
-            if (args[0].equalsIgnoreCase("address")) {
+            if ("address".equalsIgnoreCase(args[0])) {
                 VALUES.put("address", args[1]);
                 Common.getInstance().getMainConfig().setValue("System.Database.Address", args[1]);
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Alright! Please type {{WHITE}}/ccsetup database port <Your port> {{DARK_GREEN}}to set your MySQL port (Usually 3306)");
-            } else if (args[0].equalsIgnoreCase("port")) {
+            } else if ("port".equalsIgnoreCase(args[0])) {
                 if (Tools.isInteger(args[1])) {
                     int port = Integer.parseInt(args[1]);
                     VALUES.put("port", args[1]);
@@ -130,11 +112,11 @@ public class NewSetupDatabaseCommand extends CommandExecutor {
                 } else {
                     Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_RED}}Invalid port!");
                 }
-            } else if (args[0].equalsIgnoreCase("username")) {
+            } else if ("username".equalsIgnoreCase(args[0])) {
                 VALUES.put("username", args[1]);
                 Common.getInstance().getMainConfig().setValue("System.Database.Username", args[1]);
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Saved! Please type {{WHITE}}/ccsetup database password <Password> {{DARK_GREEN}}to set your MySQL password (enter \"\" for none)");
-            } else if (args[0].equalsIgnoreCase("password")) {
+            } else if ("password".equalsIgnoreCase(args[0])) {
                 if (args[1].equals("''") || args[1].equals("\"\"")) {
                     VALUES.put("password", "");
                     Common.getInstance().getMainConfig().setValue("System.Database.Password", "");
@@ -143,11 +125,11 @@ public class NewSetupDatabaseCommand extends CommandExecutor {
                     Common.getInstance().getMainConfig().setValue("System.Database.Password", args[1]);
                 }
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Saved! Please type {{WHITE}}/ccsetup database db <Database Name> {{DARK_GREEN}}to set your MySQL database.");
-            } else if (args[0].equalsIgnoreCase("db")) {
+            } else if ("db".equalsIgnoreCase(args[0])) {
                 VALUES.put("db", args[1]);
                 Common.getInstance().getMainConfig().setValue("System.Database.Db", args[1]);
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Saved! Please type {{WHITE}}/ccsetup database prefix <Prefix> {{DARK_GREEN}}to set your table prefix (If not sure, put cc3_).");
-            } else if (args[0].equalsIgnoreCase("prefix")) {
+            } else if ("prefix".equalsIgnoreCase(args[0])) {
                 VALUES.put("prefix", args[1]);
                 Common.getInstance().getMainConfig().setValue("System.Database.Prefix", args[1]);
                 Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Done! Please wait while the database is initializing.");
@@ -155,26 +137,16 @@ public class NewSetupDatabaseCommand extends CommandExecutor {
         }
 
         if (VALUES.size() == 6) {
-            try {
-                Common.getInstance().initialiseDatabase();
-                done(sender);
-            } catch (TableRegistrationException e) {
-                Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, String.format(ERROR_MESSAGE, e.getMessage()));
-                Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Be sure that you entered valid information! Commands are: {{WHITE}}/ccsetup database <address/port/username/password/db> <Value>");
-            } catch (ConnectionException e) {
-                Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, String.format(ERROR_MESSAGE, e.getMessage()));
-                Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Be sure that you entered valid information! Commands are: {{WHITE}}/ccsetup database <address/port/username/password/db> <Value>");
-            } catch (InvalidDatabaseConstructor e) {
-                Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, String.format(ERROR_MESSAGE, e.getMessage()));
-                Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Be sure that you entered valid information! Commands are: {{WHITE}}/ccsetup database <address/port/username/password/db> <Value>");
-            }
+            Common.getInstance().initialiseDatabase();
+            done(sender);
+            //TODO: A catch
         }
     }
 
     private void done(String sender) {
         Common.getInstance().initializeCurrency();
-        Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Awesome! Now, I want to know if you want to convert from Craftconomy V2?");
-        Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Please type {{WHITE}}/ccsetup currency cc2 yes {{DARK_GREEN}}or {{WHITE}}/ccsetup currency cc2 no");
+        Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}Alright! Welcome to Craftconomy! We use a Multi-Currency system. I need you to write the settings for the default currency.");
+        Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "{{DARK_GREEN}}First, let's configure the {{WHITE}}main currency name {{DARK_GREEN}}(Ex: {{WHITE}}Dollar{{DARK_GREEN}}). Type {{WHITE}}/ccsetup currency name <Name>");
         NewSetupWizard.setState(NewSetupWizard.CURRENCY_STEP);
     }
 }

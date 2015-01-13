@@ -19,9 +19,6 @@
 package com.greatmancode.craftconomy3.account;
 
 import com.greatmancode.craftconomy3.Common;
-import com.greatmancode.craftconomy3.database.tables.AccessTable;
-import com.greatmancode.craftconomy3.database.tables.AccountTable;
-import com.greatmancode.craftconomy3.database.tables.BalanceTable;
 
 import java.util.HashMap;
 import java.util.List;
@@ -34,75 +31,114 @@ import java.util.Map;
  */
 public class AccountManager {
     private final Map<String, Account> accountList = new HashMap<String, Account>();
+    private final Map<String, Account> bankList = new HashMap<String, Account>();
 
     /**
      * Retrieve a account. Accounts prefixed with bank: are bank accounts.
      *
      * @param name The name of the account to retrieve
+     * @param bankAccount If the account is a bank account
      * @return A economy account
      */
-    public Account getAccount(String name) {
+    public Account getAccount(String name, boolean bankAccount) {
         String newName = name;
         if (!Common.getInstance().getMainConfig().getBoolean("System.Case-sentitive")) {
             newName = name.toLowerCase();
         }
         Account account;
-        if (accountList.containsKey(newName)) {
+        if (bankAccount && bankList.containsKey(newName)) {
+            account = bankList.get(newName);
+        } else if (!bankAccount && accountList.containsKey(newName)) {
             account = accountList.get(newName);
         } else {
-            account = new Account(newName);
-            accountList.put(newName, account);
+            account = Common.getInstance().getStorageHandler().getStorageEngine().getAccount(newName, bankAccount);
+            if (bankAccount) {
+                bankList.put(newName, account);
+            } else {
+                accountList.put(newName, account);
+            }
         }
         return account;
+    }
+
+    @Deprecated
+    public Account getAccount(String name) {
+        if (name.startsWith("bank:")) {
+            return getAccount(name.split("bank:")[1], true);
+        } else {
+            return getAccount(name, false);
+        }
     }
 
     /**
      * Check if a account exist in the database.
      *
      * @param name The name to check
+     * @param bankAccount If the account is a bank account
      * @return True if the account exists else false
      */
-    public boolean exist(String name) {
+    public boolean exist(String name, boolean bankAccount) {
         String newName = name;
         if (!Common.getInstance().getMainConfig().getBoolean("System.Case-sentitive")) {
             newName = name.toLowerCase();
         }
-        return accountList.containsKey(newName) || Common.getInstance().getDatabaseManager().getDatabase().select(AccountTable.class).where().equal("name", newName).execute().findOne() != null;
-    }
-
-    /**
-     * Delete a account from the system
-     *
-     * @param name The account name
-     * @return True if the account has been deleted. Else false.
-     */
-    public boolean delete(String name) {
-        boolean result = false;
-        if (exist(name)) {
-            Account account = getAccount(name);
-            AccountTable accountTable = Common.getInstance().getDatabaseManager().getDatabase().select(AccountTable.class).where().contains("name", name).execute().findOne();
-            List<BalanceTable> balanceTableList = Common.getInstance().getDatabaseManager().getDatabase().select(BalanceTable.class).where().equal("username_id", accountTable.getId()).execute().find();
-            if (balanceTableList != null) {
-                for (BalanceTable aBalanceTableList : balanceTableList) {
-                    Common.getInstance().getDatabaseManager().getDatabase().remove(aBalanceTableList);
-                }
+        boolean result;
+        if (bankAccount) {
+            result = bankList.containsKey(newName);
+            if (!result) {
+                result = Common.getInstance().getStorageHandler().getStorageEngine().accountExist(newName, bankAccount);
             }
-            if (account.isBankAccount()) {
-                List<AccessTable> accessTableList = Common.getInstance().getDatabaseManager().getDatabase().select(AccessTable.class).where().equal("account_id", accountTable.getId()).execute().find();
-                if (accessTableList != null) {
-                    for (AccessTable anAccessTableList : accessTableList) {
-                        Common.getInstance().getDatabaseManager().getDatabase().remove(anAccessTableList);
-                    }
-                }
+        } else {
+            result = accountList.containsKey(newName);
+            if (!result) {
+                result = Common.getInstance().getStorageHandler().getStorageEngine().accountExist(newName, bankAccount);
             }
-            Common.getInstance().getDatabaseManager().getDatabase().remove(accountTable);
-            accountList.remove(name);
-            result = true;
         }
         return result;
     }
 
+    @Deprecated
+    public boolean exist(String name) {
+        if (name.startsWith("bank:")) {
+            return exist(name.split("bank:")[1], true);
+        } else {
+            return exist(name, false);
+        }
+    }
+    /**
+     * Delete a account from the system
+     *
+     * @param name The account name
+     * @param bankAccount If the account is a bank account
+     * @return True if the account has been deleted. Else false.
+     */
+    public boolean delete(String name, boolean bankAccount) {
+        boolean result = false;
+        if (exist(name, bankAccount)) {
+            result = Common.getInstance().getStorageHandler().getStorageEngine().deleteAccount(name, bankAccount);
+            if (bankAccount) {
+                bankList.remove(name);
+            } else {
+                accountList.remove(name);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Clear the account cache from this user. Useful due to the UUID feature in minecraft.
+     * @param name The name of the player/account.
+     */
     public void clearCache(String name) {
         accountList.remove(name);
+    }
+
+    /**
+     * Retrieve a list of all the accounts
+     * @param bank If we want a bank list or not
+     * @return A List of accounts
+     */
+    public List<String> getAllAccounts(boolean bank) {
+        return Common.getInstance().getStorageHandler().getStorageEngine().getAllAccounts(bank);
     }
 }

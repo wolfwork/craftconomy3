@@ -20,20 +20,14 @@ package com.greatmancode.craftconomy3.commands.currency;
 
 import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.craftconomy3.currency.Currency;
-import com.greatmancode.craftconomy3.database.tables.ExchangeTable;
 import com.greatmancode.tools.commands.interfaces.CommandExecutor;
-
-import java.util.List;
 
 public class CurrencyRatesCommand extends CommandExecutor {
     @Override
     public void execute(String sender, String[] args) {
-        List<ExchangeTable> exchangeTableList = Common.getInstance().getDatabaseManager().getDatabase().select(ExchangeTable.class).execute().find();
         Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().getString("rates_header"));
-        for (ExchangeTable entry : exchangeTableList) {
-            Currency currencyFrom = Common.getInstance().getCurrencyManager().getCurrency(entry.getFrom_currency_id());
-            Currency currencyTo = Common.getInstance().getCurrencyManager().getCurrency(entry.getTo_currency_id());
-            Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "1 " + currencyFrom.getName() + " => " + entry.getAmount() + " " + currencyTo.getName());
+        for (CurrencyRateEntry entry : Common.getInstance().getStorageHandler().getStorageEngine().getCurrencyExchanges()) {
+            Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, "1 " + entry.from.getName() + " => " + entry.amount + " " + entry.to.getName());
         }
     }
 
@@ -60,5 +54,28 @@ public class CurrencyRatesCommand extends CommandExecutor {
     @Override
     public String getPermissionNode() {
         return "craftconomy.rates";
+    }
+
+    public static class CurrencyRateEntry {
+        private double amount;
+        private Currency from, to;
+
+        public CurrencyRateEntry(Currency from, Currency to, double amount) {
+            this.amount = amount;
+            this.from = from;
+            this.to = to;
+        }
+
+        public double getAmount() {
+            return amount;
+        }
+
+        public Currency getFrom() {
+            return from;
+        }
+
+        public Currency getTo() {
+            return to;
+        }
     }
 }

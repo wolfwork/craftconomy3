@@ -22,6 +22,7 @@ import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.craftconomy3.TestInitializator;
 import com.greatmancode.tools.caller.unittest.UnitTestServerCaller;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,9 +35,13 @@ public class TestAccount {
 		new TestInitializator();
 	}
 
-	@Test
+    @After
+    public void close() { Common.getInstance().onDisable();};
+
+    @Test
 	public void testAccount() {
-		Account account = new Account("greatman321");
+        Account account = Common.getInstance().getAccountManager().getAccount("greatman321", false);
+        assertEquals(100, Common.getInstance().getAccountManager().getAccount("greatman321", false).getBalance(UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultBankCurrency().getName()), 0);
 		account.deposit(50.0, UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultCurrency().getName());
 		assertTrue(account.hasEnough(50.0, UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()));
 		account.set(0, UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultCurrency().getName());
@@ -47,7 +52,7 @@ public class TestAccount {
 		assertFalse(account.hasEnough(50.01, UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()));
 		assertTrue(account.hasEnough(50.00, UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()));
 
-		Account account2 = new Account("test123");
+		Account account2 = Common.getInstance().getAccountManager().getAccount("test123", false);
 		account.withdraw(0.35, UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultCurrency().getName());
 		account2.deposit(0.35, UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultCurrency().getName());
 		assertTrue(account.hasEnough(49.65, UnitTestServerCaller.worldName, Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()));

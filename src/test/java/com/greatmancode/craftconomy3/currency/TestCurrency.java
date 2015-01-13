@@ -18,78 +18,88 @@
  */
 package com.greatmancode.craftconomy3.currency;
 
+import com.greatmancode.craftconomy3.Common;
+import com.greatmancode.craftconomy3.TestInitializator;
 import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-public class TestCurrency extends TestCase {
+import static org.junit.Assert.assertEquals;
+
+public class TestCurrency {
+
+    @Before
+    public void setUp() {
+        new TestInitializator();
+    }
+
+    @After
+    public void close() { Common.getInstance().onDisable();};
+
 	//TODO: Null tests
-	public void testGetName() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+	@Test
+    public void testGetName() {
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		assertEquals("test", currency.getName());
 	}
 
+    @Test
 	public void testSetName() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		currency.setName("testing");
 		assertEquals("testing", currency.getName());
 	}
 
+    @Test
 	public void testGetPlural() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		assertEquals("plural", currency.getPlural());
 	}
 
+    @Test
 	public void testSetPlural() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		currency.setPlural("plurall");
 		assertEquals("plurall", currency.getPlural());
 	}
 
+    @Test
 	public void testGetMinor() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		assertEquals("minor", currency.getMinor());
 	}
 
+    @Test
 	public void testSetMinor() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		currency.setMinor("minors");
 		assertEquals("minors", currency.getMinor());
 	}
 
+    @Test
 	public void testGetMinorPlural() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		assertEquals("minorplural", currency.getMinorPlural());
 	}
 
+    @Test
 	public void testSetMinorPlural() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		currency.setMinorPlural("minorPlurals");
 		assertEquals("minorPlurals", currency.getMinorPlural());
 	}
 
-	public void testGetDatabaseID() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
-		assertEquals(1, currency.getDatabaseID());
-	}
-
-	public void testSetHardCap() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
-		currency.setHardCap(300.0);
-		assertEquals(300.0, currency.getHardCap(), 0);
-	}
-
-	public void testGetHardCap() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 5.0, "$");
-		assertEquals(5.0, currency.getHardCap(), 0);
-	}
-
+    @Test
 	public void testSetSign() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		currency.setSign("asdf");
 		assertEquals("asdf", currency.getSign());
 	}
 
+    @Test
 	public void testGetSign() {
-		Currency currency = new Currency(1, "test", "plural", "minor", "minorplural", 0.0, "$");
+		Currency currency = new Currency("test", "plural", "minor", "minorplural", "$");
 		assertEquals("$", currency.getSign());
 	}
 }

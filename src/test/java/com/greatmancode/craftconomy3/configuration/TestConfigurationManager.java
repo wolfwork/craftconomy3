@@ -21,6 +21,7 @@ package com.greatmancode.craftconomy3.configuration;
 import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.craftconomy3.TestInitializator;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +34,10 @@ public class TestConfigurationManager {
 		new TestInitializator();
 	}
 
-	@Test
+    @After
+    public void close() { Common.getInstance().onDisable();};
+
+    @Test
 	public void test() {
 		assertNotNull(Common.getInstance().getConfigurationManager());
 		assertNotNull(Common.getInstance().getMainConfig());
@@ -41,7 +45,11 @@ public class TestConfigurationManager {
 		Common.getInstance().getMainConfig().setValue("System.Setup", true);
 		assertEquals(true, Common.getInstance().getMainConfig().getBoolean("System.Setup"));
 		Common.getInstance().getMainConfig().setValue("System.Setup", false);
-		assertEquals("sqlite", Common.getInstance().getMainConfig().getString("System.Database.Type"));
+        if (Boolean.getBoolean("mysql")) {
+            assertEquals("mysql", Common.getInstance().getMainConfig().getString("System.Database.Type"));
+        } else {
+            assertEquals("h2", Common.getInstance().getMainConfig().getString("System.Database.Type"));
+        }
 		assertEquals(3306, Common.getInstance().getMainConfig().getInt("System.Database.Port"));
 		Common.getInstance().getMainConfig().setValue("test", 30);
 		assertEquals(30, Common.getInstance().getMainConfig().getLong("test"));

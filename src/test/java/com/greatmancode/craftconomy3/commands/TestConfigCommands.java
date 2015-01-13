@@ -24,6 +24,7 @@ import com.greatmancode.craftconomy3.TestInitializator;
 import com.greatmancode.craftconomy3.commands.config.ConfigBankPriceCommand;
 import com.greatmancode.craftconomy3.commands.config.ConfigFormatCommand;
 import com.greatmancode.craftconomy3.commands.config.ConfigHoldingsCommand;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,6 +41,9 @@ public class TestConfigCommands {
     public void setUp() {
         new TestInitializator();
     }
+
+    @After
+    public void close() { Common.getInstance().onDisable();};
 
     @Test
     public void testBankPriceCommand() {
@@ -75,22 +79,22 @@ public class TestConfigCommands {
 
         command.execute(TEST_USER, new String[] {"200"});
         assertEquals(200, Common.getInstance().getDefaultHoldings(), 0);
-        Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT3);
-        assertEquals(200, Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT3).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()), 0);
+        Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT3, false);
+        assertEquals(200, Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT3, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()), 0);
 
         command.execute(TEST_USER, new String[] {"-10"});
         assertEquals(200, Common.getInstance().getDefaultHoldings(), 0);
-        Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT4);
-        assertEquals(200, Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT4).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()), 0);
+        Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT4, false);
+        assertEquals(200, Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT4, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()), 0);
 
         command.execute(TEST_USER, new String[] {"adjbf"});
         assertEquals(200, Common.getInstance().getDefaultHoldings(), 0);
-        Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT2);
-        assertEquals(200, Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT2).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()), 0);
+        Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT2, false);
+        assertEquals(200, Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT2, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()), 0);
 
         command.execute(TEST_USER, new String[] {"0"});
         assertEquals(0, Common.getInstance().getDefaultHoldings(), 0);
-        Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT);
-        assertEquals(0, Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()), 0);
+        Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT, false);
+        assertEquals(0, Common.getInstance().getAccountManager().getAccount(TEST_ACCOUNT, false).getBalance("default", Common.getInstance().getCurrencyManager().getDefaultCurrency().getName()), 0);
     }
 }

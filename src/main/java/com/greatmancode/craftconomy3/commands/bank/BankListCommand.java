@@ -19,24 +19,14 @@
 package com.greatmancode.craftconomy3.commands.bank;
 
 import com.greatmancode.craftconomy3.Common;
-import com.greatmancode.craftconomy3.database.tables.AccessTable;
-import com.greatmancode.craftconomy3.database.tables.AccountTable;
 import com.greatmancode.tools.commands.interfaces.CommandExecutor;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class BankListCommand extends CommandExecutor {
     @Override
     public void execute(String sender, String[] args) {
-        List<AccessTable> accessTableList = Common.getInstance().getDatabaseManager().getDatabase().select(AccessTable.class).where().equal("playerName", sender).execute().find();
-        List<AccountTable> accountTableList = new ArrayList<AccountTable>();
-        for (AccessTable accessEntry : accessTableList) {
-            accountTableList.add(Common.getInstance().getDatabaseManager().getDatabase().select(AccountTable.class).where().equal("id", accessEntry.getAccountId()).execute().findOne());
-        }
-
-        Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().parse("bank_account_list", Arrays.toString(accountTableList.toArray())));
+        Common.getInstance().getServerCaller().getPlayerCaller().sendMessage(sender, Common.getInstance().getLanguageManager().parse("bank_account_list", Arrays.toString(Common.getInstance().getStorageHandler().getStorageEngine().getBankAccountList(sender))));
     }
 
     @Override

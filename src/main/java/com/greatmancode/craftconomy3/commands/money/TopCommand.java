@@ -18,15 +18,12 @@
  */
 package com.greatmancode.craftconomy3.commands.money;
 
-import com.alta189.simplesave.query.OrderQuery;
-import com.alta189.simplesave.query.QueryResult;
-import com.alta189.simplesave.query.SelectQuery;
 import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.craftconomy3.currency.Currency;
-import com.greatmancode.craftconomy3.database.tables.AccountTable;
-import com.greatmancode.craftconomy3.database.tables.BalanceTable;
 import com.greatmancode.craftconomy3.groups.WorldGroupsManager;
 import com.greatmancode.tools.commands.interfaces.CommandExecutor;
+
+import java.util.List;
 
 class TopCommandThread implements Runnable {
     public static final int NUMBER_ELEMENTS = 10;
@@ -49,9 +46,9 @@ class TopCommandThread implements Runnable {
     private final String sender;
     private final int page;
     private final String world;
-    private final int currency;
+    private final Currency currency;
 
-    public TopCommandThread(String sender, int page, String world, int currency) {
+    public TopCommandThread(String sender, int page, String world, Currency currency) {
         this.sender = sender;
         this.page = page;
         this.world = world;
@@ -61,24 +58,10 @@ class TopCommandThread implements Runnable {
     @Override
     public void run() {
         String ret = Common.getInstance().getLanguageManager().parse("money_top_header", page, world) + "\n";
-        SelectQuery<BalanceTable> balanceQuery = Common.getInstance().getDatabaseManager().getDatabase().select(BalanceTable.class);
-        balanceQuery.where().equal("worldName", world).and().equal("currency_id", currency);
-        balanceQuery.order().getPairs().add(new OrderQuery.OrderPair("balance", OrderQuery.Order.DESC));
-        balanceQuery.limit().setLimit((page - 1) * NUMBER_ELEMENTS, NUMBER_ELEMENTS);
-        QueryResult<BalanceTable> balanceResult = balanceQuery.execute();
-        for (int i = 0; i < balanceResult.find().size(); i++) {
-            BalanceTable r = balanceResult.find().get(i);
-
-            // Is it better to do 50 query or to get ALL the username-id pairs?
-            // I choose the first solution. This is done async and will save lot
-            // of memory on large server with lots of players/account.
-
-            AccountTable usernameResult = Common.getInstance().getDatabaseManager().getDatabase().select(AccountTable.class).where().equal("id", r.getUsername_id()).execute().findOne();
-            String username = "ERROR";
-            if (usernameResult != null) {
-                username = usernameResult.getName();
-            }
-            ret += "" + ((page - 1) * NUMBER_ELEMENTS + i + 1) + ": {{DARK_GREEN}}" + username + " {{WHITE}}" + Common.getInstance().format(null, Common.getInstance().getCurrencyManager().getCurrency(currency), r.getBalance()) + "\n";
+        List<TopCommand.TopEntry> list = Common.getInstance().getStorageHandler().getStorageEngine().getTopEntry(page, currency, world);
+        for (int i = 0; i < list.size(); i++) {
+            TopCommand.TopEntry entry = list.get(i);
+            ret += "" + ((page - 1) * NUMBER_ELEMENTS + i + 1) + ": {{DARK_GREEN}}" + entry.username + " {{WHITE}}" + Common.getInstance().format(null, currency, entry.balance) + "\n";
         }
 
         Common.getInstance().getServerCaller().getSchedulerCaller().delay(new TopCommandThreadEnd(sender, ret), 0, false);
@@ -118,7 +101,7 @@ public class TopCommand extends CommandExecutor {
             world = args[2];
         }
 
-        Common.getInstance().getServerCaller().getSchedulerCaller().delay(new TopCommandThread(sender, page, world, currency.getDatabaseID()), 0, false);
+        Common.getInstance().getServerCaller().getSchedulerCaller().delay(new TopCommandThread(sender, page, world, currency), 0, false);
     }
 
     @Override
@@ -144,5 +127,17 @@ public class TopCommand extends CommandExecutor {
     @Override
     public String getPermissionNode() {
         return "craftconomy.money.top";
+    }
+
+    public static class TopEntry {
+        public String username;
+        public Currency currency;
+        public double balance;
+
+        public TopEntry(String username, Currency currency, double balance) {
+            this.username = username;
+            this.currency = currency;
+            this.balance = balance;
+        }
     }
 }

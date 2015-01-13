@@ -18,21 +18,22 @@
  */
 package com.greatmancode.craftconomy3.converter.converters;
 
-import com.alta189.simplesave.Database;
-import com.alta189.simplesave.DatabaseFactory;
-import com.alta189.simplesave.exceptions.ConnectionException;
-import com.alta189.simplesave.exceptions.TableRegistrationException;
-import com.alta189.simplesave.mysql.MySQLConfiguration;
-import com.greatmancode.craftconomy3.Common;
 import com.greatmancode.craftconomy3.converter.Converter;
-import com.greatmancode.craftconomy3.database.tables.mineconomy.MineconomyTable;
+import com.greatmancode.craftconomy3.storage.sql.tables.mineconomy.MineconomyTable;
+import com.greatmancode.tools.utils.Tools;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Mineconomy extends Converter {
 
-    private Database db;
+    private HikariDataSource db;
 
     public Mineconomy() {
         getDbTypes().add("flatfile");
@@ -42,7 +43,7 @@ public class Mineconomy extends Converter {
     @Override
     public List<String> getDbInfo() {
         if (getDbInfoList().size() == 0) {
-            if (getSelectedDbType().equalsIgnoreCase("mysql")) {
+            if ("mysql".equals(getSelectedDbType())) {
                 getDbInfoList().add("address");
                 getDbInfoList().add("port");
                 getDbInfoList().add("username");
@@ -56,28 +57,19 @@ public class Mineconomy extends Converter {
     @Override
     public boolean connect() {
         boolean result = false;
-        if (getSelectedDbType().equalsIgnoreCase("flatfile")) {
+        if ("flatfile".equals(getSelectedDbType())) {
 
-        } else if (getSelectedDbType().equalsIgnoreCase("mysql")) {
-            try {
-                MySQLConfiguration config = new MySQLConfiguration();
-                config.setHost(getDbConnectInfo().get("address"));
-                config.setUser(getDbConnectInfo().get("username"));
-                config.setPassword(getDbConnectInfo().get("password"));
-                config.setDatabase(getDbConnectInfo().get("database"));
-                config.setPort(Integer.parseInt(getDbConnectInfo().get("port")));
-                db = DatabaseFactory.createNewDatabase(config);
-                db.setCheckTableOnRegistration(false);
-                db.registerTable(MineconomyTable.class);
-                db.connect();
-                result = true;
-            } catch (NumberFormatException e) {
-                Common.getInstance().getLogger().severe("Illegal Port!");
-            } catch (ConnectionException e) {
-                Common.getInstance().getLogger().severe("Error while connecting to Mineconomy database! Error: " + e.getMessage());
-            } catch (TableRegistrationException e) {
-                Common.getInstance().getLogger().severe("Error while registering table for the Mineconomy database! Error: " + e.getMessage());
-            }
+        } else if ("mysql".equals(getSelectedDbType())) {
+            HikariConfig config = new HikariConfig();
+            config.setMaximumPoolSize(10);
+            config.setDataSourceClassName("com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
+            config.addDataSourceProperty("serverName", getDbConnectInfo().get("address"));
+            config.addDataSourceProperty("port", getDbConnectInfo().get("port"));
+            config.addDataSourceProperty("databaseName", getDbConnectInfo().get("database"));
+            config.addDataSourceProperty("user", getDbConnectInfo().get("username"));
+            config.addDataSourceProperty("password", getDbConnectInfo().get("password"));
+            config.addDataSourceProperty("autoDeserialize", true);
+            db = new HikariDataSource(config);
         }
         return result;
     }
@@ -90,23 +82,34 @@ public class Mineconomy extends Converter {
     @Override
     public boolean importData(String sender) {
         List<User> userList;
-        if (getSelectedDbType().equalsIgnoreCase("flatfile")) {
+        if ("flatfile".equals(getSelectedDbType())) {
             userList = importFlatfile(sender);
         } else {
             userList = importMySQL(sender);
         }
-        addAccountToString(userList);
-        addBalance(sender, userList);
+        addAccountToString(sender, userList);
         return true;
     }
 
     private List<User> importMySQL(String sender) {
-        List<MineconomyTable> tables = db.select(MineconomyTable.class).execute().find();
-        List<User> userList = new ArrayList<User>();
-        for (MineconomyTable entry : tables) {
-            userList.add(new User(entry.getAccount(), entry.getBalance()));
+        Connection connection = null;
+        PreparedStatement statement = null;
+        try {
+            connection = db.getConnection();
+            statement = connection.prepareStatement(MineconomyTable.SELECT_ENTRY);
+            ResultSet set = statement.executeQuery();
+            List<User> userList = new ArrayList<User>();
+            while (set.next()) {
+                userList.add(new User(set.getString("account"), set.getDouble("balance")));
+            }
+            return userList;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            Tools.closeJDBCStatement(statement);
+            Tools.closeJDBCConnection(connection);
         }
-        return userList;
+        return null;
     }
 
     private List<User> importFlatfile(String sender) {
