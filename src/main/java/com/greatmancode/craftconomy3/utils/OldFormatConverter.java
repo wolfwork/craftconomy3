@@ -249,7 +249,7 @@ public class OldFormatConverter {
 
     }
 
-    private void step2() throws SQLException, IOException, ParseException {
+    public void step2() throws SQLException, IOException, ParseException {
         Common.getInstance().sendConsoleMessage(Level.INFO, "Converting step 2: Inserting the data back in all the new tables");
         Common.getInstance().sendConsoleMessage(Level.INFO, "Creating the new tables");
         String dbType = Common.getInstance().getMainConfig().getString("System.Database.Type");
@@ -350,7 +350,10 @@ public class OldFormatConverter {
             Iterator<JSONObject> internalIterator = balances.iterator();
             while (internalIterator.hasNext()) {
                 JSONObject internalObj = internalIterator.next();
-                engine.setBalance(account, (double)internalObj.get("balance"), engine.getCurrency(currenciesMap.get(((Long)internalObj.get("currency_id")).intValue())),(String)internalObj.get("worldName"));
+                Currency currency = engine.getCurrency(currenciesMap.get(((Long) internalObj.get("currency_id")).intValue()));
+                if (currency != null) {
+                    engine.setBalance(account, (double)internalObj.get("balance"), currency, (String)internalObj.get("worldName"));
+                }
             }
 
             JSONArray logs = (JSONArray) obj.get("logs");
