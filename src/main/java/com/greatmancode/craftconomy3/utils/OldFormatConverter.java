@@ -1,7 +1,7 @@
-/*
+/**
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2016, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -66,6 +66,7 @@ public class OldFormatConverter {
         } else if (dbType.equalsIgnoreCase("sqlite")) {
             config.setDriverClassName("org.sqlite.JDBC");
             config.setJdbcUrl("jdbc:sqlite:"+ Common.getInstance().getServerCaller().getDataFolder() + File.separator +  "database.db");
+            config.setConnectionTestQuery("SELECT 1");
             db = new HikariDataSource(config);
         } else {
             Common.getInstance().sendConsoleMessage(Level.SEVERE, "Unknown database type for old format converter!");

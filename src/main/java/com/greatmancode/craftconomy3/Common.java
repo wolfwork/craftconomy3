@@ -1,7 +1,7 @@
-/*
+/**
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2016, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -43,6 +43,7 @@ import com.greatmancode.tools.configuration.Config;
 import com.greatmancode.tools.configuration.ConfigurationManager;
 import com.greatmancode.tools.interfaces.caller.ServerCaller;
 import com.greatmancode.tools.language.LanguageManager;
+import com.greatmancode.tools.utils.FeatherBoard;
 import com.greatmancode.tools.utils.Metrics;
 import com.greatmancode.tools.utils.Tools;
 import com.greatmancode.tools.utils.Updater;
@@ -152,6 +153,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
 
 
             getServerCaller().registerPermission("craftconomy.money.log.others");
+            addFeatherboardSupport();
             initialized = true;
         }
     }
@@ -365,7 +367,9 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
                 string.append(amount).append(".").append(coin).append(" ").append(name);
             } else if (format == DisplayFormat.SIGN) {
                 string.append(currency.getSign()).append(amount).append(".").append(coin);
-            } else if (format == DisplayFormat.MAJORONLY) {
+            } else if (format == DisplayFormat.SIGNFRONT) {
+                string.append(amount).append(".").append(coin).append(currency.getSign());
+            }else if (format == DisplayFormat.MAJORONLY) {
                 string.append(amount).append(" ").append(name);
             }
         }
@@ -404,8 +408,6 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
 
     /**
      * Convert from SQLite to MySQL
-     *
-     * @param dbManagernew The MySQL instance
      */
     private void convertDatabase(){
         sendConsoleMessage(Level.INFO, getLanguageManager().getString("starting_database_convert"));
@@ -790,7 +792,7 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         languageManager.addLanguageEntry("cant_withdraw_bank", "{{DARK_RED}}You can't withdraw in this account!");
         languageManager.addLanguageEntry("bank_price_modified", "{{DARK_GREEN}}Bank price modified!");
         languageManager.addLanguageEntry("config_bankprice_cmd_help", "/craftconomy bankprice <Amount> - Change the price to create a bank account.");
-        languageManager.addLanguageEntry("config_format_cmd_help", "/craftconomy format <long/small/sign/majoronly> - Set the display format.");
+        languageManager.addLanguageEntry("config_format_cmd_help", "/craftconomy format <long/small/sign/signfront/majoronly> - Set the display format.");
         languageManager.addLanguageEntry("config_cmd_help", "/craftconomy - shows config command help");
         languageManager.addLanguageEntry("config_holdings_cmd_help", "/craftconomy holdings <Amount> - Set the default amount of money of a user account.");
         languageManager.addLanguageEntry("config_help_title", "{{DARK_GREEN}} ======== Craftconomy Commands ========");
@@ -1012,5 +1014,19 @@ public class Common implements com.greatmancode.tools.interfaces.Common {
         Common.getInstance().sendConsoleMessage(Level.INFO, "Your database is out of date! (Version " + currentVersion + "). Updating it to Revision " + newVersion + ".");
     }
 
+    private void addFeatherboardSupport() {
+        if (getServerCaller() instanceof BukkitServerCaller && getServerCaller().isPluginEnabled("MVdWPlaceholderAPI")) {
+            FeatherBoard.registerPlaceHolder(getServerCaller().getLoader(), "cc3money", new FeatherBoard.FeatherBoardReplaceEvent() {
+
+                @Override
+                public String getResult(String username, boolean isOnline) {
+                    if (getAccountManager().exist(username, false)) {
+                        return format(null, getCurrencyManager().getDefaultCurrency(), getAccountManager().getAccount(username, false).getBalance("default", getCurrencyManager().getDefaultCurrency().getName()), getDisplayFormat());
+                    }
+                    return "";
+                }
+            });
+        }
+    }
 
 }

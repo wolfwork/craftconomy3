@@ -1,7 +1,7 @@
-/*
+/**
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2016, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -214,9 +214,9 @@ public class H2ToMySQLConverter {
         public UUID uuid;
         public boolean infiniteMoney, ignoreACL, bank;
         public int id;
-        public List<Balance> balanceList = new ArrayList<Balance>();
-        public List<Access> accessList = new ArrayList<Access>();
-        public List<Log> logList = new ArrayList<Log>();
+        public List<Balance> balanceList = new ArrayList<>();
+        public List<Access> accessList = new ArrayList<>();
+        public List<Log> logList = new ArrayList<>();
     }
 
     private class Balance {

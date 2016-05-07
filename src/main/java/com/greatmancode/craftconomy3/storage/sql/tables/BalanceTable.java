@@ -1,7 +1,7 @@
-/*
+/**
  * This file is part of Craftconomy3.
  *
- * Copyright (c) 2011-2014, Greatman <http://github.com/greatman/>
+ * Copyright (c) 2011-2016, Greatman <http://github.com/greatman/>
  *
  * Craftconomy3 is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,10 +32,10 @@ public class BalanceTable extends DatabaseTable {
             "  `username_id` int(11)," +
             "  `" + CURRENCY_FIELD + "` varchar(50)," +
             "  PRIMARY KEY (" + WORLD_NAME_FIELD + ", username_id, currency_id)," +
-            "  CONSTRAINT `fk_balance_account`" +
+            "  CONSTRAINT `"+getPrefix()+"fk_balance_account`" +
             "    FOREIGN KEY (username_id)" +
             "    REFERENCES " + getPrefix() + AccountTable.TABLE_NAME + "(id) ON UPDATE CASCADE ON DELETE CASCADE," +
-            "  CONSTRAINT `fk_balance_currency`" +
+            "  CONSTRAINT `"+getPrefix()+"fk_balance_currency`" +
             "    FOREIGN KEY (" + CURRENCY_FIELD + ")" +
             "    REFERENCES " + getPrefix() + CurrencyTable.TABLE_NAME +"(name) ON UPDATE CASCADE ON DELETE CASCADE" +
             ") ENGINE=InnoDB;";
